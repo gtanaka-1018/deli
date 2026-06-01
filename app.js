@@ -1,9 +1,9 @@
 const storageKey = "deli-invest-simulator";
 const services = [
-  { id: "uber", label: "Uber" },
-  { id: "demae", label: "出前館" },
-  { id: "rocket", label: "ロケット" },
-  { id: "menu", label: "menu" },
+  { id: "uber", label: "サービスA" },
+  { id: "demae", label: "サービスB" },
+  { id: "rocket", label: "サービスC" },
+  { id: "menu", label: "サービスD" },
   { id: "other", label: "その他" },
 ];
 
