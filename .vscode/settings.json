@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^python -c \"import urllib\\.request, re; html=urllib\\.request\\.urlopen\\('http://delisult\\.app/'\\)\\.read\\(\\)\\.decode\\('utf-8', 'ignore'\\); print\\('---HEAD---'\\); print\\(html\\[:4000\\]\\); print\\('---SCRIPTS---'\\); \\[print\\(m\\.group\\(1\\)\\) for m in re\\.finditer\\(r'<script\\[\\^>\\]\\*src=\\[\\\\\"\\\\'\\]\\(\\[\\^\\\\\"\\\\'\\]\\+\\)\\[\\\\\"\\\\'\\]', html\\)\\]; print\\('---INLINE---'\\); \\[print\\('INLINE', \\(m\\.group\\(1\\)\\.strip\\(\\)\\[:300\\]\\.replace\\('\\\\n', ' '\\)\\)\\) for m in re\\.finditer\\(r'<script\\[\\^>\\]\\*>\\(\\.\\*\\?\\)</script>', html, re\\.S\\) if m\\.group\\(1\\)\\.strip\\(\\) and len\\(m\\.group\\(1\\)\\.strip\\(\\)\\)<500\\]\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

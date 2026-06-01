@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>デリサル風 売上管理＋投資シミュレーション</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <h1>売上管理 &amp; 投資信託シミュレーション</h1>
+        <p>配達売上と投資積立の結果をかんたんに確認できます。</p>
+      </header>
+
+      <section class="card">
+        <h2>売上入力</h2>
+        <p>各サービス別の売上と件数を入力してください。</p>
+        <div class="grid sales-grid">
+          <div class="grid-header">サービス</div>
+          <div class="grid-header">売上 (円)</div>
+          <div class="grid-header">件数</div>
+
+          <div>Uber</div>
+          <input id="sales-uber" type="number" min="0" value="0" />
+          <input id="count-uber" type="number" min="0" value="0" />
+
+          <div>出前館</div>
+          <input id="sales-demae" type="number" min="0" value="0" />
+          <input id="count-demae" type="number" min="0" value="0" />
+
+          <div>ロケット</div>
+          <input id="sales-rocket" type="number" min="0" value="0" />
+          <input id="count-rocket" type="number" min="0" value="0" />
+
+          <div>menu</div>
+          <input id="sales-menu" type="number" min="0" value="0" />
+          <input id="count-menu" type="number" min="0" value="0" />
+
+          <div>その他</div>
+          <input id="sales-other" type="number" min="0" value="0" />
+          <input id="count-other" type="number" min="0" value="0" />
+        </div>
+
+        <div class="summary-row">
+          <div class="summary-item">
+            <span>売上合計</span>
+            <strong id="total-sales">¥0</strong>
+          </div>
+          <div class="summary-item">
+            <span>件数合計</span>
+            <strong id="total-count">0件</strong>
+          </div>
+          <div class="summary-item">
+            <span>平均単価</span>
+            <strong id="average-ticket">¥0</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>投資信託シミュレーション</h2>
+        <p>月々の積立額を設定して、年利何％で続けると将来いくらになるかを確認します。</p>
+
+        <div class="form-grid">
+          <label for="investment-mode">積立方式</label>
+          <select id="investment-mode">
+            <option value="fixed">固定金額</option>
+            <option value="percent">売上の割合</option>
+          </select>
+
+          <label for="investment-amount">積立額</label>
+          <input id="investment-amount" type="number" min="0" value="10000" />
+
+          <label for="investment-percent">売上の割合 (%)</label>
+          <input id="investment-percent" type="number" min="0" max="100" value="10" />
+
+          <label for="annual-yield">想定年利 (%)</label>
+          <input id="annual-yield" type="number" min="0" step="0.1" value="5" />
+        </div>
+
+        <div class="investment-result">
+          <div>毎月の積立額：</div>
+          <strong id="monthly-investment">¥0</strong>
+        </div>
+
+        <div class="result-table">
+          <div class="result-row header-row">
+            <div>期間</div>
+            <div>将来価値</div>
+          </div>
+          <div class="result-row">
+            <div>5年後</div>
+            <div id="fv-5">¥0</div>
+          </div>
+          <div class="result-row">
+            <div>10年後</div>
+            <div id="fv-10">¥0</div>
+          </div>
+          <div class="result-row">
+            <div>20年後</div>
+            <div id="fv-20">¥0</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
