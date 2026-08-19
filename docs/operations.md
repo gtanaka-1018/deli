@@ -23,7 +23,17 @@
 
 ## アクセス状況
 
-Vercel Web Analyticsの読込コードを公開ページに設置している。Vercelダッシュボードの対象プロジェクトでWeb Analyticsを有効化し、再デプロイすると、日時、ページビュー、国、端末種別、OS、ブラウザーなどをプロジェクト所有者だけが確認できる。
+Vercel Web Analyticsの読込コードを公開ページに設置している。Vercelダッシュボードの対象プロジェクトでWeb Analyticsを有効化し、再デプロイすると、日時、ページビュー、国、端末種別、OS、ブラウザーなどの詳細をプロジェクト所有者が確認できる。
+
+公開ページ下部には、Web Analyticsを有効化してからの「ページ閲覧」と「訪問者」の匿名集計だけを表示する。`/api/traffic` がVercel Web Analytics APIをサーバー側で読み、ブラウザーへは2つの集計値だけを返す。売上・経費などの入力内容は取得も公開もしない。
+
+公開集計を有効にするには、Vercelプロジェクトへ次を設定して再デプロイする。
+
+- `VERCEL_ANALYTICS_TOKEN`: Web Analyticsを読み取れるVercel Access Token。Sensitiveとして設定する。
+- `VERCEL_ANALYTICS_TEAM_ID`: チーム所有プロジェクトの場合のTeam ID。
+- `VERCEL_ANALYTICS_PROJECT_ID`: `VERCEL_PROJECT_ID`を自動公開していない場合だけ設定する。
+
+トークンは`public/`へ置かない。未設定時やVercel APIが利用できないとき、公開画面は数値の代わりに「公開集計は準備中です」と表示する。
 
 Web Analyticsは匿名集計であり、氏名やメールアドレスまでは特定できない。「誰が」を確認するには、利用者ごとのログインが必要になる。推奨構成は次のとおり。
 

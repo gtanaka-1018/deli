@@ -16,7 +16,8 @@
     <link rel="canonical" href="https://okumeter.com/" />
     <title>億メーター | 配達収益管理</title>
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="icon" href="app-icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="app-icon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="app-icon.png" />
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="x-theme.css" />
   </head>
@@ -24,7 +25,7 @@
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <span class="brand-mark" aria-hidden="true">億</span>
+          <img class="brand-mark" src="app-icon.png" width="38" height="38" alt="" />
           <span class="brand-text">
             <h1>億メーター</h1>
             <small>配達の記録と税金の見通し</small>
@@ -588,6 +589,24 @@
         </section>
       </main>
 
+      <footer class="public-traffic" data-public-traffic aria-labelledby="publicTrafficTitle">
+        <div class="public-traffic-copy">
+          <span class="public-traffic-eyebrow">みんなの利用状況</span>
+          <strong id="publicTrafficTitle">公開集計を読み込み中</strong>
+          <small id="publicTrafficNote">匿名のアクセス数だけを集計しています</small>
+        </div>
+        <dl class="public-traffic-metrics" aria-live="polite">
+          <div>
+            <dt>ページ閲覧</dt>
+            <dd><span id="publicPageviews">–</span><small>回</small></dd>
+          </div>
+          <div>
+            <dt>訪問者</dt>
+            <dd><span id="publicVisitors">–</span><small>人</small></dd>
+          </div>
+        </dl>
+      </footer>
+
       <dialog class="service-dialog period-picker-dialog" id="periodPickerDialog" aria-labelledby="periodPickerTitle">
         <div class="dialog-card">
           <div class="dialog-heading">
@@ -743,7 +762,7 @@
       <dialog class="welcome-dialog" id="welcomeDialog" aria-labelledby="welcomeTitle">
         <div class="welcome-card">
           <div class="welcome-visual" aria-hidden="true">
-            <span class="welcome-logo">億</span>
+            <img class="welcome-logo" src="app-icon.png" width="68" height="68" alt="" />
             <span class="welcome-chart"><i></i><i></i><i></i><i></i></span>
           </div>
           <p class="welcome-eyebrow">資産1億円への道を見える化</p>
@@ -776,6 +795,7 @@
 
     <script src="tax-calculator.js"></script>
     <script src="app.js"></script>
+    <script src="traffic.js"></script>
     <script>
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
