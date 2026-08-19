@@ -46,7 +46,7 @@ test("達成率は数値だけを表示し、時間帯別の推定効率を集�
     updatedAt: "2099-01-01T00:00:00.000Z",
   });
 
-  await page.goto(process.env.DELILOG_TEST_URL || "https://delilog.vercel.app", { waitUntil: "networkidle" });
+  await page.goto(process.env.DELILOG_TEST_URL || "https://okumeter.com", { waitUntil: "networkidle" });
   await page.locator('[data-screen="summary"]').click();
 
   await expect(page.locator("#periodLabel")).toBeHidden();
@@ -91,7 +91,7 @@ test("開始・終了時刻がない過去年には説明を表示する", async
     updatedAt: "2099-01-01T00:00:00.000Z",
   });
 
-  await page.goto(process.env.DELILOG_TEST_URL || "https://delilog.vercel.app", { waitUntil: "networkidle" });
+  await page.goto(process.env.DELILOG_TEST_URL || "https://okumeter.com", { waitUntil: "networkidle" });
   await page.locator('[data-screen="summary"]').click();
 
   await expect(page.locator("#yearReport .time-analysis-empty")).toBeVisible();

@@ -9,7 +9,7 @@ test.use({
 test("狭いスマホ幅で開始・終了時刻が重ならない", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 });
   await page.addInitScript(() => localStorage.setItem("deli-onboarding-complete-v1", "done"));
-  await page.goto(process.env.DELILOG_TEST_URL || "https://delilog.vercel.app", { waitUntil: "networkidle" });
+  await page.goto(process.env.DELILOG_TEST_URL || "https://okumeter.com", { waitUntil: "networkidle" });
 
   const row = page.locator(".work-session-row").first();
   const start = row.locator('[data-session-field="startTime"]');

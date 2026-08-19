@@ -1,4 +1,4 @@
-# デリログ リポジトリ運用ルール
+# 億メーター リポジトリ運用ルール
 
 ## 対象範囲
 
@@ -37,6 +37,6 @@ node --test tests\tax-calculator.test.js
 ## デプロイ
 
 - GitHubの `main` をコードの正本とし、Vercelプロジェクト `delilog` と同じ内容に保つ。
-- 本番URLは `https://delilog.vercel.app`。
+- 本番URLは `https://okumeter.com`。Vercelの既定URL `https://delilog.vercel.app` は補助URLとして残す。
 - 本番反映はテスト後に行い、トップページ、主要アセット、PWAファイルのHTTP 200を確認する。
 - 認証・課金・データ移行を伴う変更は、互換性とロールバック方法を先に文書化する。

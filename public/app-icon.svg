@@ -6,7 +6,6 @@
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="118" fill="url(#g)"/>
-  <path d="M139 111h105c100 0 169 57 169 145s-69 145-169 145H139V111Z" fill="#fff" opacity=".96"/>
-  <path d="M215 181h31c54 0 88 27 88 75s-34 75-88 75h-31V181Z" fill="#087f5b"/>
-  <path d="M106 378h190" fill="none" stroke="#9cf0c2" stroke-width="22" stroke-linecap="round"/>
+  <circle cx="256" cy="256" r="153" fill="none" stroke="#9cf0c2" stroke-width="24" stroke-linecap="round" stroke-dasharray="760 202" transform="rotate(139 256 256)"/>
+  <text x="256" y="328" fill="#fff" font-family="sans-serif" font-size="222" font-weight="800" text-anchor="middle">億</text>
 </svg>

@@ -1,4 +1,4 @@
-const CACHE_NAME = "delilog-v8";
+const CACHE_NAME = "okumeter-v9";
 const APP_SHELL = [
   "/",
   "/index.html",

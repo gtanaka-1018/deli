@@ -1,10 +1,11 @@
-# デリログ運用ガイド
+# 億メーター運用ガイド
 
 更新日: 2026-08-19
 
 ## 公開先と正本
 
-- 本番: https://delilog.vercel.app
+- 本番: https://okumeter.com
+- Vercel既定URL: https://delilog.vercel.app
 - Vercelプロジェクト: `delilog`
 - GitHub: `gtanaka-1018/deli`
 - 正本ブランチ: `main`

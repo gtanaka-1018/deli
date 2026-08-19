@@ -23,7 +23,7 @@ test("確定申告画面をスマホ幅で操作できる", async ({ page }) => 
       updatedAt: "2099-01-01T00:00:00.000Z",
     }));
   });
-  await page.goto(process.env.DELILOG_TEST_URL || "https://delilog.vercel.app", { waitUntil: "networkidle" });
+  await page.goto(process.env.DELILOG_TEST_URL || "https://okumeter.com", { waitUntil: "networkidle" });
 
   await expect(page.locator("#welcomeDialog")).toBeVisible();
   await expect(page.locator("#welcomeDialog")).toContainText("配達の数字を、迷わず管理。");
@@ -75,7 +75,7 @@ test("確定申告画面をスマホ幅で操作できる", async ({ page }) => 
 });
 
 test("PWA用ファイルを配信できる", async ({ request }) => {
-  const baseUrl = process.env.DELILOG_TEST_URL || "https://delilog.vercel.app";
+  const baseUrl = process.env.DELILOG_TEST_URL || "https://okumeter.com";
   const manifest = await request.get(`${baseUrl}/manifest.webmanifest`);
   const worker = await request.get(`${baseUrl}/service-worker.js`);
   expect(manifest.ok()).toBeTruthy();

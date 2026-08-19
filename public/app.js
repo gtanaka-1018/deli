@@ -2872,7 +2872,7 @@ function exportBackup() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `deli-sales-backup-${todayString()}.json`;
+  link.download = `okumeter-backup-${todayString()}.json`;
   link.click();
   URL.revokeObjectURL(url);
   try {

@@ -9,7 +9,7 @@ test.use({
 
 test("2019～2026年のスマホ転送用ファイルを読み込み、再読込後も保持する", async ({ page }) => {
   const backupPath = path.resolve(process.env.DELILOG_IMPORT_FILE || "data/delilog-sales-2019-2026.json");
-  const appUrl = process.env.DELILOG_TEST_URL || "https://delilog.vercel.app";
+  const appUrl = process.env.DELILOG_TEST_URL || "https://okumeter.com";
 
   await page.addInitScript(() => localStorage.setItem("deli-onboarding-complete-v1", "done"));
   await page.goto(appUrl, { waitUntil: "networkidle" });

@@ -22,7 +22,7 @@ test("日・週・月・年を選択したタップだけで即時反映する",
       updatedAt: "2099-01-01T00:00:00.000Z",
     }));
   });
-  await page.goto(process.env.DELILOG_TEST_URL || "https://delilog.vercel.app", { waitUntil: "networkidle" });
+  await page.goto(process.env.DELILOG_TEST_URL || "https://okumeter.com", { waitUntil: "networkidle" });
 
   const picker = page.locator("#periodPickerDialog");
   await page.locator("#periodPickerButton").click();
