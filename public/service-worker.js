@@ -1,4 +1,4 @@
-const CACHE_NAME = "okumeter-v9";
+const CACHE_NAME = "okumeter-v10";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -6,8 +6,9 @@ const APP_SHELL = [
   "/x-theme.css",
   "/tax-calculator.js",
   "/app.js",
+  "/traffic.js",
   "/manifest.webmanifest",
-  "/app-icon.svg",
+  "/app-icon.png",
 ];
 
 self.addEventListener("install", (event) => {
