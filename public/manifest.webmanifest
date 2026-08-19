@@ -1,0 +1,19 @@
+{
+  "name": "デリログ | 配達収益管理",
+  "short_name": "デリログ",
+  "description": "配達の売上・稼働時間・経費をスマートフォンから記録できます。",
+  "lang": "ja",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f2f7f3",
+  "theme_color": "#087f5b",
+  "icons": [
+    {
+      "src": "app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

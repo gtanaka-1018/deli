@@ -1,0 +1,7 @@
+data/
+tmp-deli-sales-test.json
+test-results/
+.vercel/
+node_modules/
+playwright-report/
+*.log

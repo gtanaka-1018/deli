@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#087f5b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="デリログ" />
+    <title>デリログ | 配達収益管理</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="app-icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="x-theme.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <span class="brand-mark" aria-hidden="true">D</span>
+          <span class="brand-text">
+            <h1>デリログ</h1>
+            <small>配達の記録と税金の見通し</small>
+          </span>
+        </div>
+        <div class="header-status" aria-label="保存方式">
+          <span class="status-dot"></span>
+          <span id="storageModeLabel">この端末内に保存</span>
+        </div>
+      </header>
+
+      <nav class="screen-nav" id="primaryNav" aria-label="画面を切り替える">
+        <button class="screen-tab active" type="button" data-screen="input" aria-controls="inputScreen" aria-current="page">
+          <span class="screen-tab-icon">＋</span>
+          <span>入力</span>
+        </button>
+        <button class="screen-tab" type="button" data-screen="summary" aria-controls="summaryScreen">
+          <span class="screen-tab-icon">▥</span>
+          <span>集計</span>
+        </button>
+        <button class="screen-tab" type="button" data-screen="plan" aria-controls="planScreen">
+          <span class="screen-tab-icon">◎</span>
+          <span>計画</span>
+        </button>
+        <button class="screen-tab" type="button" data-screen="tax" aria-controls="taxScreen">
+          <span class="screen-tab-icon">￥</span>
+          <span>確定申告</span>
+        </button>
+        <button class="screen-tab" type="button" data-screen="settings" aria-controls="settingsScreen">
+          <span class="screen-tab-icon">⚙</span>
+          <span>設定</span>
+        </button>
+      </nav>
+
+      <main class="workspace">
+        <section class="app-screen active" id="inputScreen" data-screen-panel="input">
+          <div class="period-host" id="inputPeriodHost">
+            <section class="control-strip" id="periodControls" aria-label="対象期間を選択">
+              <div class="date-controls">
+                <button class="icon-button" id="prevPeriod" type="button" title="前へ" aria-label="前へ">‹</button>
+                <div class="period-center">
+                  <input id="selectedDate" type="date" aria-label="対象日" hidden />
+                  <div class="week-picker-control" id="selectedWeekControl" hidden>
+                    <span id="selectedWeekRange" aria-hidden="true">-</span>
+                    <span class="calendar-mark" aria-hidden="true"></span>
+                    <input id="selectedWeek" type="week" aria-label="対象週" />
+                  </div>
+                  <input id="selectedMonth" type="month" aria-label="対象月" hidden />
+                  <select id="selectedYear" aria-label="対象年" hidden></select>
+                  <button class="period-picker-button" id="periodPickerButton" type="button" aria-haspopup="dialog" aria-controls="periodPickerDialog">
+                    <span id="periodPickerValue">期間を選択</span>
+                    <span class="calendar-mark" aria-hidden="true"></span>
+                  </button>
+                  <p id="periodLabel">-</p>
+                </div>
+                <button class="icon-button" id="nextPeriod" type="button" title="次へ" aria-label="次へ">›</button>
+              </div>
+            </section>
+          </div>
+          <section class="panel input-panel" id="dayPanel">
+            <div class="panel-heading input-heading">
+              <div>
+                <h2>配達記録</h2>
+              </div>
+            </div>
+
+            <div class="daily-calc" aria-label="入力中の集計">
+              <div>
+                <span>総売上</span>
+                <strong id="dailySales">¥0</strong>
+              </div>
+              <div>
+                <span>利益</span>
+                <strong id="dailyProfit">¥0</strong>
+              </div>
+              <div>
+                <span>稼働時間</span>
+                <strong id="dailyWorkHours">0.00h</strong>
+              </div>
+              <div>
+                <span>時給</span>
+                <strong id="dailyHourly">¥0</strong>
+              </div>
+              <div>
+                <span>経費</span>
+                <strong id="dailyExpense">¥0</strong>
+              </div>
+              <div>
+                <span>ガソリン単価</span>
+                <strong id="dailyGasUnit">-</strong>
+              </div>
+            </div>
+
+            <div class="input-section service-picker-block">
+              <div class="field-section-heading">
+                <div>
+                  <span class="section-step">1</span>
+                  <strong>配達会社</strong>
+                </div>
+              </div>
+              <div class="service-picker" id="servicePicker" aria-label="配達会社を選択"></div>
+            </div>
+
+            <div class="input-section work-session-field">
+              <div class="field-section-heading">
+                <div>
+                  <span class="section-step">2</span>
+                  <strong>稼働時間帯</strong>
+                </div>
+                <button class="text-button muted" id="addWorkSession" type="button">＋ 時間帯を追加</button>
+              </div>
+              <div class="work-session-list" id="workSessions"></div>
+            </div>
+
+            <div class="input-section expense-field">
+              <div class="field-section-heading">
+                <div>
+                  <span class="section-step">3</span>
+                  <strong>経費</strong>
+                </div>
+                <button class="text-button expense-add-button" id="addExpense" type="button">＋ 経費を追加</button>
+              </div>
+              <div class="expense-total-row">
+                <span>この日の経費</span>
+                <strong id="expenseTotal">¥0</strong>
+              </div>
+              <div class="expense-list" id="expenseList"></div>
+            </div>
+
+            <div class="input-section extra-fields-section">
+              <div class="field-section-heading">
+                <div>
+                  <span class="section-step">4</span>
+                  <strong>追加情報</strong>
+                </div>
+              </div>
+              <div class="field-grid compact-fields">
+                <label>
+                  使用車両
+                  <select id="vehicleId">
+                    <option value="">未選択</option>
+                  </select>
+                </label>
+                <label>
+                  車両の走行距離 km
+                  <input id="odometerKm" type="number" min="0" step="0.1" inputmode="decimal" placeholder="例：35196" />
+                  <small class="odometer-hint" id="odometerHint">前回の記録を入力すると当日分を自動計算します</small>
+                </label>
+                <label class="memo-field">
+                  1日のメモ
+                  <input id="memo" type="text" maxlength="120" placeholder="例：夜勤、雨、メンテナンス" />
+                </label>
+              </div>
+              <div class="source-data-summary" id="sourceDataSummary" hidden></div>
+              <details class="advanced-inputs">
+                <summary>時刻を入力できない場合・追加休憩</summary>
+                <div class="field-grid advanced-field-grid">
+                  <label>
+                    追加休憩時間 h
+                    <input id="breakHours" type="number" min="0" step="0.01" inputmode="decimal" placeholder="時間帯内で休憩した場合" />
+                  </label>
+                  <label>
+                    稼働時間 h（時刻なしの場合）
+                    <input id="workHours" type="number" min="0" step="0.01" inputmode="decimal" placeholder="例：7.50" />
+                  </label>
+                </div>
+                <p class="imported-hours-note" id="workHoursOverrideHint" hidden>
+                  元データに記録された稼働時間を使用中です。時間帯を編集すると自動計算へ切り替わります。
+                </p>
+              </details>
+            </div>
+
+            <div class="record-action-dock">
+              <span class="save-status saved" id="saveDockStatus" role="status">保存済み</span>
+              <div class="record-action-buttons">
+                <button class="text-button danger" id="deleteRecord" type="button">削除</button>
+                <button class="text-button primary save-button" id="saveRecord" type="button">この日の記録を保存</button>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section class="app-screen" id="summaryScreen" data-screen-panel="summary" hidden>
+          <div class="screen-heading-panel">
+            <div>
+              <h2>集計</h2>
+            </div>
+            <div class="segmented" role="tablist" aria-label="集計単位">
+              <button class="view-tab active" id="dayViewTab" type="button" role="tab" data-view="day" aria-controls="dayReport" aria-selected="true">日</button>
+              <button class="view-tab" id="weekViewTab" type="button" role="tab" data-view="week" aria-controls="weekReport" aria-selected="false">週</button>
+              <button class="view-tab" id="monthViewTab" type="button" role="tab" data-view="month" aria-controls="monthReport" aria-selected="false">月</button>
+              <button class="view-tab" id="yearViewTab" type="button" role="tab" data-view="year" aria-controls="yearReport" aria-selected="false">年</button>
+            </div>
+          </div>
+          <div class="period-host" id="summaryPeriodHost"></div>
+
+          <section class="metrics-grid" aria-label="主要指標">
+            <article class="metric-tile accent-blue">
+              <span>売上</span>
+              <strong id="metricSales">¥0</strong>
+            </article>
+            <article class="metric-tile accent-green">
+              <span>利益</span>
+              <strong id="metricProfit">¥0</strong>
+            </article>
+            <article class="metric-tile accent-amber">
+              <span>時給</span>
+              <strong id="metricHourly">¥0</strong>
+            </article>
+            <article class="metric-tile accent-red">
+              <span>達成率</span>
+              <strong id="metricAchievement">0%</strong>
+            </article>
+          </section>
+
+          <section class="panel report-panel">
+            <div class="panel-heading">
+              <div>
+                <h2 id="reportTitle">集計</h2>
+              </div>
+            </div>
+
+            <div id="dayReport" class="report-view active" role="tabpanel" aria-labelledby="dayViewTab"></div>
+            <div id="weekReport" class="report-view" role="tabpanel" aria-labelledby="weekViewTab"></div>
+            <div id="monthReport" class="report-view" role="tabpanel" aria-labelledby="monthViewTab"></div>
+            <div id="yearReport" class="report-view" role="tabpanel" aria-labelledby="yearViewTab"></div>
+          </section>
+        </section>
+
+        <section class="app-screen" id="planScreen" data-screen-panel="plan" hidden>
+          <section class="panel plan-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>計画</h2>
+              </div>
+            </div>
+            <div class="period-host plan-period-host" id="planPeriodHost"></div>
+            <label class="target-input">
+              目標売上
+              <input id="monthlyTarget" type="number" min="0" step="1000" inputmode="numeric" />
+            </label>
+            <div class="progress-block">
+              <div class="progress-top">
+                <span>目標売上達成率</span>
+                <strong id="planPercent">0%</strong>
+              </div>
+              <div class="progress-track">
+                <div id="planProgress" class="progress-fill"></div>
+              </div>
+            </div>
+            <dl class="plan-list">
+              <div>
+                <dt>残り必要売上</dt>
+                <dd id="planRemaining">¥0</dd>
+              </div>
+              <div>
+                <dt>今日から1日あたり</dt>
+                <dd id="planDailyNeed">¥0</dd>
+              </div>
+              <div>
+                <dt>1週間あたり</dt>
+                <dd id="planWeeklyNeed">¥0</dd>
+              </div>
+              <div>
+                <dt>現在ペースの着地</dt>
+                <dd id="planForecast">¥0</dd>
+              </div>
+              <div>
+                <dt>想定配達回数</dt>
+                <dd id="planNeededCount">0件</dd>
+              </div>
+            </dl>
+          </section>
+
+        </section>
+
+        <section class="app-screen tax-screen" id="taxScreen" data-screen-panel="tax" hidden>
+          <div class="screen-heading-panel tax-heading-panel">
+            <div>
+              <h2>確定申告・納税見込み</h2>
+              <p>記録した売上と経費から、その年の税額を概算します。</p>
+            </div>
+            <label class="tax-year-control" for="taxYear">
+              対象年
+              <select id="taxYear" aria-label="確定申告の対象年"></select>
+            </label>
+          </div>
+
+          <div class="tax-notice" role="note">
+            <strong>これは納税準備のための概算です</strong>
+            <p>単身の個人事業主を基本に計算します。扶養、税額控除、自治体差、損失の繰越などにより実際の金額は変わります。</p>
+          </div>
+
+          <section class="tax-overview-grid" aria-label="年間事業集計">
+            <article>
+              <span>年間売上</span>
+              <strong id="taxAnnualSales">¥0</strong>
+            </article>
+            <article>
+              <span>記録済み経費</span>
+              <strong id="taxAnnualExpenses">¥0</strong>
+            </article>
+            <article class="tax-overview-profit">
+              <span>配達の利益</span>
+              <strong id="taxAnnualProfit">¥0</strong>
+            </article>
+          </section>
+
+          <div class="tax-layout">
+            <section class="panel tax-input-panel" aria-labelledby="taxInputTitle">
+              <div class="panel-heading">
+                <div>
+                  <h2 id="taxInputTitle">申告条件・所得控除</h2>
+                  <p>金額は対象年の1月から12月までの合計を入力してください。</p>
+                </div>
+              </div>
+
+              <div class="tax-field-grid">
+                <label for="taxEmploymentMode">
+                  働き方
+                  <select id="taxEmploymentMode">
+                    <option value="self_employed">専業（配達が本業）</option>
+                    <option value="side_job">副業（本業は会社員）</option>
+                  </select>
+                  <small>副業では、会社の年末調整分を除き、給与以外で増える税額を計算します。</small>
+                </label>
+
+                <label for="taxSalaryRevenue" id="taxSalaryRevenueField" hidden>
+                  本業の給与収入（年収）
+                  <span class="money-input"><span>¥</span><input id="taxSalaryRevenue" type="number" min="0" step="1000" inputmode="numeric" /></span>
+                  <small>源泉徴収票の「支払金額」です。給与所得は自動計算します（現在：<strong id="taxSalaryIncomePreview">¥0</strong>）。</small>
+                </label>
+
+                <label for="taxSalaryWithholding" id="taxSalaryWithholdingField" hidden>
+                  本業の源泉徴収税額
+                  <span class="money-input"><span>¥</span><input id="taxSalaryWithholding" type="number" min="0" step="100" inputmode="numeric" /></span>
+                  <small>源泉徴収票の「源泉徴収税額」です。会社の年末調整で精算済みの金額として差し引きます。</small>
+                </label>
+
+                <label for="taxResidentPaymentMethod" id="taxResidentPaymentField" hidden>
+                  副業分の住民税
+                  <select id="taxResidentPaymentMethod">
+                    <option value="ordinary">自分で納付を希望（普通徴収）</option>
+                    <option value="payroll">給与天引きに合算（特別徴収）</option>
+                  </select>
+                  <small>「自分で納付」は確定申告書で希望できます。最終的な扱いは自治体の処理に従います。</small>
+                </label>
+
+                <label for="taxRegion">
+                  お住まいの地域
+                  <select id="taxRegion"></select>
+                  <small>対象年の翌年1月1日時点の住所を選びます。地域独自の上乗せ税を反映します。</small>
+                </label>
+
+                <label for="taxFilingType">
+                  申告方法
+                  <select id="taxFilingType">
+                    <option value="white">白色申告</option>
+                    <option value="blue10">青色申告（10万円控除）</option>
+                    <option value="blue55">青色申告（55万円控除）</option>
+                    <option value="blue65">青色申告（65万円控除）</option>
+                  </select>
+                  <small>青色控除には承認・記帳・期限内申告などの要件があります。</small>
+                </label>
+
+                <label for="taxOtherIncome">
+                  <span id="taxOtherIncomeLabel">配達以外の所得</span>
+                  <span class="money-input"><span>¥</span><input id="taxOtherIncome" type="number" min="0" step="1000" inputmode="numeric" /></span>
+                  <small id="taxOtherIncomeHint">給与なら収入額ではなく、給与所得控除後の所得金額を入力します。</small>
+                </label>
+
+                <label for="taxIdeco">
+                  iDeCo 年間掛金
+                  <span class="money-input"><span>¥</span><input id="taxIdeco" type="number" min="0" step="1000" inputmode="numeric" /></span>
+                  <small>その年に実際に支払った掛金の合計です。</small>
+                </label>
+
+                <label for="taxMutualAid">
+                  小規模企業共済 年間掛金
+                  <span class="money-input"><span>¥</span><input id="taxMutualAid" type="number" min="0" max="840000" step="1000" inputmode="numeric" /></span>
+                  <small>iDeCoとは別に、支払った掛金の全額を反映します。</small>
+                </label>
+
+                <label for="taxSocialInsurance">
+                  社会保険料
+                  <span class="money-input"><span>¥</span><input id="taxSocialInsurance" type="number" min="0" step="1000" inputmode="numeric" /></span>
+                  <small id="taxSocialInsuranceHint">国民健康保険、国民年金など、その年に支払った合計です。</small>
+                </label>
+
+                <label for="taxOtherDeductions">
+                  その他の所得控除
+                  <span class="money-input"><span>¥</span><input id="taxOtherDeductions" type="number" min="0" step="1000" inputmode="numeric" /></span>
+                  <small>生命保険、扶養、医療費、寄附金控除などの合計目安です。</small>
+                </label>
+
+                <label for="taxWithholding">
+                  <span id="taxWithholdingLabel">源泉徴収・予定納税済み</span>
+                  <span class="money-input"><span>¥</span><input id="taxWithholding" type="number" min="0" step="1000" inputmode="numeric" /></span>
+                  <small id="taxWithholdingHint">すでに納めた所得税があれば入力します。</small>
+                </label>
+              </div>
+
+              <div class="tax-switches">
+                <label class="tax-switch-row" for="taxFileAnyway" id="taxFileAnywayRow" hidden>
+                  <span><strong>副業所得が20万円以下でも所得税の申告をする</strong><small>医療費控除などで確定申告する場合は、20万円以下の副業所得も含めます。住民税の申告は別途必要です。</small></span>
+                  <input id="taxFileAnyway" type="checkbox" />
+                </label>
+                <label class="tax-switch-row" for="taxIncludeBusinessTax">
+                  <span><strong>個人事業税も見積もる</strong><small>配達業が法定業種に該当する前提で、利益から年290万円を控除後、5%で概算します。</small></span>
+                  <input id="taxIncludeBusinessTax" type="checkbox" checked />
+                </label>
+                <label class="tax-switch-row" for="taxInvoiceRegistered">
+                  <span><strong>インボイス発行事業者に登録している</strong><small>登録している場合は売上が1,000万円以下でも消費税申告が必要です。</small></span>
+                  <input id="taxInvoiceRegistered" type="checkbox" />
+                </label>
+              </div>
+            </section>
+
+            <section class="panel tax-result-panel" aria-labelledby="taxResultTitle" aria-live="polite">
+              <div class="panel-heading">
+                <div>
+                  <h2 id="taxResultTitle">納税見込み</h2>
+                  <p id="taxResultSubtitle">入力内容を反映した概算です。</p>
+                </div>
+              </div>
+
+              <div class="tax-total-card">
+                <span id="taxTotalLabel">年間の税負担概算</span>
+                <strong id="taxTotalBurden">¥0</strong>
+                <small id="taxMonthlyReserve">積立目安 月 ¥0</small>
+              </div>
+              <p class="tax-filing-status" id="taxFilingStatus"></p>
+
+              <dl class="tax-result-list">
+                <div id="taxSalaryIncomeRow" hidden>
+                  <dt>給与所得控除後の給与所得</dt>
+                  <dd id="taxSalaryIncome">¥0</dd>
+                </div>
+                <div id="taxCompanyHandledRow" hidden>
+                  <dt>会社の年末調整で精算済み</dt>
+                  <dd id="taxCompanyHandled">¥0</dd>
+                </div>
+                <div id="taxIncrementalBurdenRow" hidden>
+                  <dt id="taxIncrementalBurdenLabel">給与以外で増える年間税負担</dt>
+                  <dd id="taxIncrementalBurden">¥0</dd>
+                </div>
+                <div>
+                  <dt id="taxTaxableIncomeLabel">課税所得（所得税）</dt>
+                  <dd id="taxTaxableIncome">¥0</dd>
+                </div>
+                <div>
+                  <dt id="taxIncomeTaxLabel">所得税</dt>
+                  <dd id="taxIncomeTax">¥0</dd>
+                </div>
+                <div>
+                  <dt id="taxReconstructionTaxLabel">復興特別所得税</dt>
+                  <dd id="taxReconstructionTax">¥0</dd>
+                </div>
+                <div>
+                  <dt id="taxResidentTaxLabel">住民税の概算</dt>
+                  <dd id="taxResidentTax">¥0</dd>
+                </div>
+                <div>
+                  <dt>個人事業税の概算</dt>
+                  <dd id="taxBusinessTax">¥0</dd>
+                </div>
+                <div class="tax-result-emphasis">
+                  <dt id="taxAdditionalPaymentLabel">これから納める見込み</dt>
+                  <dd id="taxAdditionalPayment">¥0</dd>
+                </div>
+              </dl>
+
+              <p class="tax-refund-message" id="taxRefundMessage" hidden></p>
+
+              <details class="tax-calculation-details">
+                <summary>計算の内訳を見る</summary>
+                <dl>
+                  <div><dt>青色申告特別控除</dt><dd id="taxBlueDeduction">¥0</dd></div>
+                  <div><dt>所得税の基礎控除</dt><dd id="taxBasicDeduction">¥0</dd></div>
+                  <div><dt>入力した所得控除</dt><dd id="taxEnteredDeductions">¥0</dd></div>
+                  <div><dt>住民税の所得割率</dt><dd id="taxResidentRate">10.000%</dd></div>
+                  <div><dt>住民税・森林環境税の定額分</dt><dd id="taxResidentFixed">¥0</dd></div>
+                  <div><dt>地域独自の上乗せ</dt><dd id="taxRegionalExtra">¥0</dd></div>
+                </dl>
+              </details>
+              <p class="tax-region-note" id="taxRegionNote"></p>
+            </section>
+          </div>
+
+          <section class="panel tax-schedule-panel" aria-labelledby="taxScheduleTitle">
+            <div class="panel-heading">
+              <div>
+                <h2 id="taxScheduleTitle">いつ申告・納付する？</h2>
+                <p>一般的な期限です。休日や制度変更で日付が変わる場合があります。</p>
+              </div>
+            </div>
+            <ol class="tax-schedule">
+              <li><span>翌年3月</span><div><strong>所得税・復興特別所得税</strong><p id="taxIncomeDeadline">確定申告と納付</p></div></li>
+              <li><span>翌年6月～</span><div><strong>住民税</strong><p id="taxResidentSchedule">納税通知後、通常は年4回</p></div></li>
+              <li><span>翌年8月・11月</span><div><strong>個人事業税</strong><p id="taxBusinessSchedule">対象者へ都道府県から通知</p></div></li>
+            </ol>
+          </section>
+
+          <section class="panel tax-consumption-panel" aria-labelledby="taxConsumptionTitle">
+            <div>
+              <h2 id="taxConsumptionTitle">消費税の判定</h2>
+              <p id="taxConsumptionStatus">記録を確認しています。</p>
+            </div>
+            <p class="tax-source-note">この画面は概算専用です。申告時は<a href="https://www.nta.go.jp/taxes/shiraberu/shinkoku/" target="_blank" rel="noopener">国税庁の確定申告書等作成コーナー</a>や税理士へ確認してください。</p>
+          </section>
+        </section>
+
+        <section class="app-screen" id="settingsScreen" data-screen-panel="settings" hidden>
+          <section class="panel settings-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>設定</h2>
+              </div>
+            </div>
+
+            <section class="settings-section" aria-labelledby="providerSettingsTitle">
+              <div class="settings-section-heading">
+                <div>
+                  <h3 id="providerSettingsTitle">配達会社</h3>
+                </div>
+                <button class="text-button primary" id="addProvider" type="button" aria-haspopup="dialog" aria-controls="providerDialog">＋ 会社を追加</button>
+              </div>
+              <div class="settings-list" id="providerSettingsList"></div>
+            </section>
+
+            <section class="settings-section" aria-labelledby="vehicleSettingsTitle">
+              <div class="settings-section-heading">
+                <div>
+                  <h3 id="vehicleSettingsTitle">車両</h3>
+                </div>
+                <button class="text-button primary" id="addVehicle" type="button" aria-haspopup="dialog" aria-controls="vehicleDialog">＋ 車両を登録</button>
+              </div>
+              <div class="settings-list" id="vehicleSettingsList"></div>
+            </section>
+          </section>
+
+          <section class="panel data-management local-data-panel">
+            <h2>データの保存・読込</h2>
+            <div class="backup-care-card" id="backupCareCard">
+              <span class="backup-care-icon" aria-hidden="true">✓</span>
+              <div>
+                <strong id="backupCareTitle">バックアップを準備しましょう</strong>
+                <p id="backupCareMessage">記録はこの端末内に保存されます。月1回のファイル保存がおすすめです。</p>
+              </div>
+            </div>
+            <div class="data-management-actions">
+              <button class="text-button primary" id="exportJson" type="button">データをファイル保存</button>
+              <label class="text-button muted file-text-button">
+                ファイルから読み込む
+                <input id="importJson" type="file" accept="application/json" />
+              </label>
+              <button class="text-button danger" id="clearAll" type="button">売上記録と目標を削除</button>
+            </div>
+            <button class="guide-link-button" id="openWelcomeGuide" type="button">ホーム画面への追加・保存方法を見る</button>
+          </section>
+        </section>
+      </main>
+
+      <dialog class="service-dialog period-picker-dialog" id="periodPickerDialog" aria-labelledby="periodPickerTitle">
+        <div class="dialog-card">
+          <div class="dialog-heading">
+            <div>
+              <h2 id="periodPickerTitle">日を選択</h2>
+            </div>
+            <button class="dialog-close" id="periodPickerClose" type="button" aria-label="閉じる">×</button>
+          </div>
+          <div class="period-picker-navigation">
+            <button class="icon-button" id="periodPickerPrev" type="button" aria-label="前の期間">‹</button>
+            <strong id="periodPickerHeading">-</strong>
+            <button class="icon-button" id="periodPickerNext" type="button" aria-label="次の期間">›</button>
+          </div>
+          <div class="period-picker-options" id="periodPickerOptions"></div>
+          <button class="text-button muted today-button period-picker-current" id="loadToday" type="button">今日へ戻る</button>
+          <p class="dialog-hint period-picker-hint">選択すると、確定ボタンなしですぐ反映されます。</p>
+        </div>
+      </dialog>
+
+      <dialog class="service-dialog" id="serviceDialog" aria-labelledby="serviceDialogTitle">
+        <form class="dialog-card" id="serviceDialogForm" method="dialog">
+          <div class="dialog-heading">
+            <div>
+              <h2 id="serviceDialogTitle">配達会社</h2>
+            </div>
+            <button class="dialog-close" id="serviceDialogClose" type="button" aria-label="閉じる">×</button>
+          </div>
+          <div class="dialog-fields">
+            <label for="serviceCount">
+              配達件数
+              <input id="serviceCount" type="number" min="0" step="1" inputmode="numeric" />
+            </label>
+            <label for="serviceSales">
+              売上金額
+              <input id="serviceSales" type="number" min="0" step="1" inputmode="numeric" />
+            </label>
+          </div>
+          <div class="dialog-actions">
+            <button class="text-button muted" id="serviceDialogCancel" type="button">キャンセル</button>
+            <button class="text-button primary" type="submit">入力を反映</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog class="service-dialog provider-dialog" id="providerDialog" aria-labelledby="providerDialogTitle">
+        <form class="dialog-card" id="providerDialogForm" method="dialog">
+          <div class="dialog-heading">
+            <div>
+              <h2 id="providerDialogTitle">配達会社を追加</h2>
+            </div>
+            <button class="dialog-close" id="providerDialogClose" type="button" aria-label="閉じる">×</button>
+          </div>
+          <div class="provider-fields">
+            <label>
+              アイコン
+              <input id="providerIcon" type="text" maxlength="3" placeholder="例：W" required />
+            </label>
+            <label>
+              会社名
+              <input id="providerName" type="text" maxlength="24" placeholder="例：Wolt" required />
+            </label>
+          </div>
+          <p class="dialog-hint">アイコンには文字や絵文字を使えます。</p>
+          <div class="dialog-actions">
+            <button class="text-button muted" id="providerDialogCancel" type="button">キャンセル</button>
+            <button class="text-button primary" id="providerDialogSubmit" type="submit">会社を追加</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog class="service-dialog provider-dialog" id="vehicleDialog" aria-labelledby="vehicleDialogTitle">
+        <form class="dialog-card" id="vehicleDialogForm" method="dialog">
+          <div class="dialog-heading">
+            <div>
+              <h2 id="vehicleDialogTitle">車両を登録</h2>
+            </div>
+            <button class="dialog-close" id="vehicleDialogClose" type="button" aria-label="閉じる">×</button>
+          </div>
+          <div class="dialog-fields">
+            <label for="vehicleType">
+              種類
+              <select id="vehicleType" required>
+                <option value="motorcycle">バイク</option>
+                <option value="bicycle">自転車</option>
+                <option value="kei">軽自動車</option>
+                <option value="other">その他</option>
+              </select>
+            </label>
+            <label for="vehicleName">
+              表示名
+              <input id="vehicleName" type="text" maxlength="30" placeholder="例：配達用バイク" required />
+            </label>
+          </div>
+          <div class="dialog-actions">
+            <button class="text-button muted" id="vehicleDialogCancel" type="button">キャンセル</button>
+            <button class="text-button primary" id="vehicleDialogSubmit" type="submit">車両を登録</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog class="service-dialog expense-dialog" id="expenseDialog" aria-labelledby="expenseDialogTitle">
+        <form class="dialog-card" id="expenseDialogForm" method="dialog">
+          <div class="dialog-heading">
+            <div>
+              <h2 id="expenseDialogTitle">経費を追加</h2>
+            </div>
+            <button class="dialog-close" id="expenseDialogClose" type="button" aria-label="閉じる">×</button>
+          </div>
+
+          <fieldset class="expense-type-fieldset">
+            <legend>経費の種類</legend>
+            <div class="expense-type-options">
+              <label class="expense-type-option">
+                <input id="expenseTypeGas" type="radio" name="expenseType" value="gas" checked />
+                <span>ガソリン</span>
+              </label>
+              <label class="expense-type-option">
+                <input id="expenseTypeOther" type="radio" name="expenseType" value="other" />
+                <span>その他</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="dialog-fields">
+            <label for="expenseAmount">
+              金額
+              <input id="expenseAmount" type="number" min="1" step="1" inputmode="numeric" required />
+            </label>
+            <div id="expenseGasFields">
+              <label for="expenseFuelLiters">
+                給油量 L（任意）
+                <input id="expenseFuelLiters" type="number" min="0" step="0.01" inputmode="decimal" />
+              </label>
+              <p class="field-note" id="expenseGasUnitPreview">単価：-</p>
+            </div>
+            <div id="expenseOtherFields" hidden>
+              <label for="expenseMemo">
+                内容メモ
+                <input id="expenseMemo" type="text" maxlength="80" placeholder="例：オイル交換、手袋" />
+              </label>
+            </div>
+          </div>
+
+          <div class="dialog-actions expense-dialog-actions">
+            <button class="text-button danger expense-delete-button" id="expenseDialogDelete" type="button" hidden>削除</button>
+            <span class="dialog-action-spacer"></span>
+            <button class="text-button muted" id="expenseDialogCancel" type="button">キャンセル</button>
+            <button class="text-button primary" type="submit">明細を反映</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog class="welcome-dialog" id="welcomeDialog" aria-labelledby="welcomeTitle">
+        <div class="welcome-card">
+          <div class="welcome-visual" aria-hidden="true">
+            <span class="welcome-logo">D</span>
+            <span class="welcome-chart"><i></i><i></i><i></i><i></i></span>
+          </div>
+          <p class="welcome-eyebrow">DELIVERY BUSINESS LOG</p>
+          <h2 id="welcomeTitle">配達の数字を、<br />迷わず管理。</h2>
+          <p class="welcome-lead">毎日の売上から納税見込みまで、スマホひとつで見通せます。</p>
+
+          <div class="welcome-points">
+            <article>
+              <span aria-hidden="true">＋</span>
+              <div><strong>まずは1日の記録から</strong><small>売上・時間・経費をまとめて保存</small></div>
+            </article>
+            <article>
+              <span aria-hidden="true">⌂</span>
+              <div><strong>ホーム画面に追加</strong><small>Safari・Chromeの共有メニューから追加できます</small></div>
+            </article>
+            <article>
+              <span aria-hidden="true">⇩</span>
+              <div><strong>記録はこの端末内</strong><small>月1回、設定からバックアップしてください</small></div>
+            </article>
+          </div>
+
+          <button class="welcome-start-button" id="welcomeStart" type="button">デリログをはじめる</button>
+          <button class="welcome-close-button" id="welcomeClose" type="button">閉じる</button>
+          <p class="welcome-privacy">会員登録不要・入力した売上や経費の記録は外部へ送信しません</p>
+        </div>
+      </dialog>
+
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </div>
+
+    <script src="tax-calculator.js"></script>
+    <script src="app.js"></script>
+    <script>
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+  </body>
+</html>
