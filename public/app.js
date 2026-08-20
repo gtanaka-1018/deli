@@ -5,7 +5,9 @@ const OKU_METER_GOAL = 100_000_000;
 const OKU_METER_MILESTONES = [1_000_000, 10_000_000, 50_000_000, OKU_METER_GOAL];
 const ASSET_FIELDS = Object.freeze([
   { id: "cash", label: "現金・預金", icon: "¥", hint: "普通預金・定期預金・現金" },
+  { id: "points", label: "ポイント・電子マネー", icon: "P", hint: "円換算した現在の残高" },
   { id: "securities", label: "株式・投資信託", icon: "↗", hint: "国内外株式・投資信託・ETF" },
+  { id: "gold", label: "金・貴金属", icon: "◆", hint: "現在の評価額" },
   { id: "pension", label: "iDeCo・年金", icon: "○", hint: "iDeCo・企業型DCなど" },
   { id: "crypto", label: "暗号資産", icon: "◇", hint: "現在の評価額" },
   { id: "realEstate", label: "不動産", icon: "⌂", hint: "現在の評価額" },

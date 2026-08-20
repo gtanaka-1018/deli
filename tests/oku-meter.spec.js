@@ -50,7 +50,9 @@ test("区分別の純資産を保存して1億円への進捗としてスマホ�
       taxProfiles: {},
       assets: {
         cash: 2_000_000,
-        securities: 5_000_000,
+        points: 200_000,
+        securities: 4_000_000,
+        gold: 800_000,
         pension: 4_000_000,
         crypto: 0,
         realEstate: 0,
@@ -73,7 +75,9 @@ test("区分別の純資産を保存して1億円への進捗としてスマホ�
   await expect(page.locator("#okuMeterTotalAssets")).toHaveText(/[¥￥]11,000,000/);
   await expect(page.locator("#okuMeterLiabilities")).toHaveText(/[¥￥]1,000,000/);
   await expect(page.locator("#okuMeterLifetimeSales")).toHaveText(/[¥￥]10,000,000/);
-  await expect(page.locator("#assetInputs [data-asset-field]")).toHaveCount(8);
+  await expect(page.locator("#assetInputs [data-asset-field]")).toHaveCount(10);
+  await expect(page.locator('[data-asset-field="points"]')).toHaveValue("200000");
+  await expect(page.locator('[data-asset-field="gold"]')).toHaveValue("800000");
   await expect(page.locator('#okuMeterMilestones [data-milestone="1000000"]')).toHaveClass(/is-achieved/);
   await expect(page.locator('#okuMeterMilestones [data-milestone="10000000"]')).toHaveClass(/is-achieved/);
   await expect(page.locator('#okuMeterMilestones [data-milestone="50000000"]')).not.toHaveClass(/is-achieved/);
