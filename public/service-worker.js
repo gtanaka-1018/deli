@@ -1,4 +1,4 @@
-const CACHE_NAME = "okumeter-v10";
+const CACHE_NAME = "okumeter-v11";
 const APP_SHELL = [
   "/",
   "/index.html",
