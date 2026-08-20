@@ -46,6 +46,10 @@
           <span class="screen-tab-icon">▥</span>
           <span>集計</span>
         </button>
+        <button class="screen-tab" type="button" data-screen="meter" aria-controls="meterScreen">
+          <span class="screen-tab-icon">◉</span>
+          <span>メーター</span>
+        </button>
         <button class="screen-tab" type="button" data-screen="plan" aria-controls="planScreen">
           <span class="screen-tab-icon">◎</span>
           <span>計画</span>
@@ -252,6 +256,70 @@
             <div id="weekReport" class="report-view" role="tabpanel" aria-labelledby="weekViewTab"></div>
             <div id="monthReport" class="report-view" role="tabpanel" aria-labelledby="monthViewTab"></div>
             <div id="yearReport" class="report-view" role="tabpanel" aria-labelledby="yearViewTab"></div>
+          </section>
+        </section>
+
+        <section class="app-screen meter-screen" id="meterScreen" data-screen-panel="meter" hidden>
+          <section class="oku-meter-card" aria-labelledby="okuMeterTitle">
+            <div class="meter-card-orbit" aria-hidden="true"></div>
+            <header class="meter-card-heading">
+              <div>
+                <span class="meter-kicker">ROAD TO ¥100,000,000</span>
+                <h2 id="okuMeterTitle">億メーター</h2>
+              </div>
+              <span class="meter-hashtag">#億メーター</span>
+            </header>
+
+            <div class="oku-meter-gauge" id="okuMeterGauge" role="img" aria-label="1億円への達成率 0パーセント">
+              <div class="oku-meter-gauge-face">
+                <span>ACHIEVEMENT</span>
+                <strong id="okuMeterPercent">0.000%</strong>
+                <small>累計売上</small>
+                <b id="okuMeterSales">¥0</b>
+              </div>
+            </div>
+
+            <div class="meter-goal-row" aria-hidden="true">
+              <span>START ¥0</span>
+              <strong>GOAL ¥100,000,000</strong>
+            </div>
+            <div class="meter-progress-rail" aria-hidden="true">
+              <span id="okuMeterRail"><i></i></span>
+            </div>
+            <div class="meter-milestones" id="okuMeterMilestones" aria-label="達成した節目">
+              <span data-milestone="1000000"><i></i>100万</span>
+              <span data-milestone="10000000"><i></i>1,000万</span>
+              <span data-milestone="50000000"><i></i>5,000万</span>
+              <span data-milestone="100000000"><i></i>1億</span>
+            </div>
+
+            <div class="meter-next" id="okuMeterNext">最初の100万円まであと¥1,000,000</div>
+          </section>
+
+          <section class="meter-stats-grid" aria-label="億メーターの内訳">
+            <article>
+              <span>1億円まで残り</span>
+              <strong id="okuMeterRemaining">¥100,000,000</strong>
+            </article>
+            <article>
+              <span>売上を記録した日</span>
+              <strong id="okuMeterRecordDays">0日</strong>
+            </article>
+            <article>
+              <span>直近30日の売上</span>
+              <strong id="okuMeterRecentSales">¥0</strong>
+            </article>
+            <article>
+              <span>これまでの最高月</span>
+              <strong id="okuMeterBestMonthSales">¥0</strong>
+              <small id="okuMeterBestMonth">記録なし</small>
+            </article>
+          </section>
+
+          <section class="meter-story-card" aria-live="polite">
+            <span>YOUR DELIVERY STORY</span>
+            <h3 id="okuMeterMessage">最初の1円が、1億へのスタート。</h3>
+            <p id="okuMeterPeriod">この端末の記録を集計しています。</p>
           </section>
         </section>
 

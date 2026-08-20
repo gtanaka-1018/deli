@@ -1359,7 +1359,7 @@ body {
   top: auto;
   z-index: 20;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   width: min(720px, calc(100% - 28px));
   margin: 0 auto;
   padding: 6px;

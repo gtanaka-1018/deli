@@ -1,6 +1,8 @@
 const STORAGE_KEY = "deli-sales-tracker-v1";
 const ONBOARDING_KEY = "deli-onboarding-complete-v1";
 const LAST_BACKUP_KEY = "deli-last-backup-v1";
+const OKU_METER_GOAL = 100_000_000;
+const OKU_METER_MILESTONES = [1_000_000, 10_000_000, 50_000_000, OKU_METER_GOAL];
 
 const TIME_BANDS = Object.freeze([
   { id: "morning", label: "早朝・朝", time: "5:00–10:00", segments: [[5 * 60, 10 * 60]] },
@@ -105,6 +107,19 @@ function bindElements() {
     "metricProfit",
     "metricHourly",
     "metricAchievement",
+    "okuMeterGauge",
+    "okuMeterPercent",
+    "okuMeterSales",
+    "okuMeterRail",
+    "okuMeterMilestones",
+    "okuMeterNext",
+    "okuMeterRemaining",
+    "okuMeterRecordDays",
+    "okuMeterRecentSales",
+    "okuMeterBestMonthSales",
+    "okuMeterBestMonth",
+    "okuMeterMessage",
+    "okuMeterPeriod",
     "loadToday",
     "deleteRecord",
     "saveRecord",
@@ -156,6 +171,7 @@ function bindElements() {
     "primaryNav",
     "inputScreen",
     "summaryScreen",
+    "meterScreen",
     "planScreen",
     "taxScreen",
     "saveDockStatus",
@@ -1492,6 +1508,7 @@ function render(options = {}) {
   els[`${state.view}Report`].classList.add("active");
 
   renderDailyPreview();
+  if (currentScreen === "meter") renderOkuMeter();
   if (currentScreen === "plan") renderPlan();
   if (currentScreen === "tax") renderTaxScreen();
   if (currentScreen === "settings") renderSettings();
@@ -2019,6 +2036,94 @@ function renderCurrentMetrics() {
   els.metricProfit.textContent = yen(summary.profit);
   els.metricHourly.textContent = yen(summary.hourly);
   renderAchievement(els.metricAchievement, achievement, target > 0);
+}
+
+function renderOkuMeter() {
+  const records = allRecordedRecords();
+  const summary = summarizeRecords(records);
+  const sales = summary.sales;
+  const progress = sales / OKU_METER_GOAL;
+  const progressPercent = progress * 100;
+  const visualPercent = Math.min(Math.max(progressPercent, 0), 100);
+  const percentLabel = formatOkuMeterPercent(progressPercent);
+  const activeRecords = records.filter((record) => Object.values(record.services)
+    .some((service) => numberValue(service.sales) > 0 || integerValue(service.count) > 0));
+
+  const recentStart = new Date();
+  recentStart.setHours(0, 0, 0, 0);
+  recentStart.setDate(recentStart.getDate() - 29);
+  const recentSummary = summarizeRecords(recordsBetween(toDateInput(recentStart), todayString()));
+  const bestMonth = bestSalesMonth(records);
+  const nextMilestone = OKU_METER_MILESTONES.find((milestone) => sales < milestone);
+
+  els.okuMeterGauge.style.setProperty("--meter-progress", `${visualPercent}%`);
+  els.okuMeterGauge.setAttribute("aria-label", `1億円への達成率 ${percentLabel}、累計売上 ${yen(sales)}`);
+  els.okuMeterPercent.textContent = percentLabel;
+  els.okuMeterSales.textContent = yen(sales);
+  els.okuMeterRail.style.width = `${visualPercent}%`;
+  els.okuMeterRemaining.textContent = yen(Math.max(OKU_METER_GOAL - sales, 0));
+  els.okuMeterRecordDays.textContent = `${formatNumber(activeRecords.length)}日`;
+  els.okuMeterRecentSales.textContent = yen(recentSummary.sales);
+  els.okuMeterBestMonthSales.textContent = yen(bestMonth.sales);
+  els.okuMeterBestMonth.textContent = bestMonth.key ? `${bestMonth.key.slice(0, 4)}年${Number(bestMonth.key.slice(5))}月` : "記録なし";
+  els.okuMeterMessage.textContent = okuMeterMessage(sales, progress);
+
+  if (activeRecords.length) {
+    const dates = activeRecords.map((record) => record.date).sort();
+    els.okuMeterPeriod.textContent = `${formatDate(dates[0])}から${formatDate(dates.at(-1))}まで、この端末の${activeRecords.length}日分を集計。`;
+  } else {
+    els.okuMeterPeriod.textContent = "売上を記録すると、この端末内だけでメーターが進みます。";
+  }
+
+  els.okuMeterMilestones.querySelectorAll("[data-milestone]").forEach((item) => {
+    const achieved = sales >= Number(item.dataset.milestone);
+    item.classList.toggle("is-achieved", achieved);
+    item.setAttribute("aria-label", `${item.textContent.trim()} ${achieved ? "達成" : "未達成"}`);
+  });
+
+  if (nextMilestone) {
+    const labels = { 1000000: "最初の100万円", 10000000: "1,000万円", 50000000: "5,000万円", 100000000: "1億円" };
+    els.okuMeterNext.textContent = `${labels[nextMilestone]}まであと${yen(nextMilestone - sales)}`;
+  } else {
+    els.okuMeterNext.textContent = `1億円を達成。現在 ${yen(sales)}`;
+  }
+}
+
+function allRecordedRecords() {
+  return Object.entries(state.records)
+    .filter(([date]) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+    .map(([date, record]) => normalizeRecord({ ...(isPlainObject(record) ? record : {}), date }));
+}
+
+function bestSalesMonth(records) {
+  const totals = new Map();
+  records.forEach((record) => {
+    const key = monthKey(record.date);
+    const sales = Object.values(record.services).reduce((sum, service) => sum + numberValue(service.sales), 0);
+    totals.set(key, (totals.get(key) || 0) + sales);
+  });
+  return [...totals.entries()].reduce(
+    (best, [key, sales]) => sales > best.sales ? { key, sales } : best,
+    { key: "", sales: 0 }
+  );
+}
+
+function formatOkuMeterPercent(value) {
+  const numeric = Math.max(Number(value) || 0, 0);
+  const digits = numeric < 1 ? 3 : numeric < 10 ? 2 : 1;
+  return `${new Intl.NumberFormat("ja-JP", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(numeric)}%`;
+}
+
+function okuMeterMessage(sales, progress) {
+  if (sales <= 0) return "最初の1円が、1億へのスタート。";
+  if (progress < 0.01) return "まずは100万円。積み上げはもう始まっている。";
+  if (progress < 0.1) return "数字が、挑戦の輪郭をつくっていく。";
+  if (progress < 0.5) return "次の桁へ。今日の積み上げを止めない。";
+  if (progress < 1) return "1億円が、現実的な距離になってきた。";
+  return "1億円、到達。積み上げた数字が証明になった。";
 }
 
 function renderPlan() {
