@@ -15,7 +15,7 @@ function dateString(date) {
   return `${year}-${month}-${day}`;
 }
 
-test("全期間の売上を1億円への進捗としてスマホ表示する", async ({ page }) => {
+test("区分別の純資産を保存して1億円への進捗としてスマホ表示する", async ({ page }) => {
   const today = new Date();
   const tenDaysAgo = new Date(today);
   tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
@@ -35,6 +35,7 @@ test("全期間の売上を1億円への進捗としてスマホ表示する", a
       expenses: [],
     });
     localStorage.setItem("deli-onboarding-complete-v1", "done");
+    if (localStorage.getItem("deli-sales-tracker-v1")) return;
     localStorage.setItem("deli-sales-tracker-v1", JSON.stringify({
       view: "day",
       selectedDate: savedDates[2],
@@ -47,6 +48,16 @@ test("全期間の売上を1億円への進捗としてスマホ表示する", a
       providers: [savedProvider],
       vehicles: [],
       taxProfiles: {},
+      assets: {
+        cash: 2_000_000,
+        securities: 5_000_000,
+        pension: 4_000_000,
+        crypto: 0,
+        realEstate: 0,
+        business: 0,
+        other: 0,
+        liabilities: 1_000_000,
+      },
       taxYear: currentYear,
       updatedAt: new Date().toISOString(),
     }));
@@ -57,10 +68,12 @@ test("全期間の売上を1億円への進捗としてスマホ表示する", a
 
   await expect(page.locator("#meterScreen")).toBeVisible();
   await expect(page.locator("#okuMeterPercent")).toHaveText("10.0%");
-  await expect(page.locator("#okuMeterSales")).toHaveText(/[¥￥]10,000,000/);
+  await expect(page.locator("#okuMeterNetAssets")).toHaveText(/[¥￥]10,000,000/);
   await expect(page.locator("#okuMeterRemaining")).toHaveText(/[¥￥]90,000,000/);
-  await expect(page.locator("#okuMeterRecordDays")).toHaveText("3日");
-  await expect(page.locator("#okuMeterRecentSales")).toHaveText(/[¥￥]3,000,000/);
+  await expect(page.locator("#okuMeterTotalAssets")).toHaveText(/[¥￥]11,000,000/);
+  await expect(page.locator("#okuMeterLiabilities")).toHaveText(/[¥￥]1,000,000/);
+  await expect(page.locator("#okuMeterLifetimeSales")).toHaveText(/[¥￥]10,000,000/);
+  await expect(page.locator("#assetInputs [data-asset-field]")).toHaveCount(8);
   await expect(page.locator('#okuMeterMilestones [data-milestone="1000000"]')).toHaveClass(/is-achieved/);
   await expect(page.locator('#okuMeterMilestones [data-milestone="10000000"]')).toHaveClass(/is-achieved/);
   await expect(page.locator('#okuMeterMilestones [data-milestone="50000000"]')).not.toHaveClass(/is-achieved/);
@@ -72,6 +85,16 @@ test("全期間の売上を1億円への進捗としてスマホ表示する", a
   }));
   expect(layout.navItems).toBe(6);
   expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewport + 1);
+
+  await page.locator('[data-asset-field="cash"]').fill("3000000");
+  await expect(page.locator("#okuMeterPercent")).toHaveText("11.0%");
+  await expect(page.locator("#okuMeterNetAssets")).toHaveText(/[¥￥]11,000,000/);
+  await page.waitForTimeout(250);
+  await page.reload({ waitUntil: "networkidle" });
+  await page.locator('[data-screen="meter"]').click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(page.locator('[data-asset-field="cash"]')).toHaveValue("3000000");
+  await expect(page.locator("#okuMeterNetAssets")).toHaveText(/[¥￥]11,000,000/);
 
   if (process.env.DELILOG_METER_SCREENSHOT) {
     await page.screenshot({ path: process.env.DELILOG_METER_SCREENSHOT, fullPage: true });

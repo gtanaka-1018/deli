@@ -274,8 +274,8 @@
               <div class="oku-meter-gauge-face">
                 <span>ACHIEVEMENT</span>
                 <strong id="okuMeterPercent">0.000%</strong>
-                <small>累計売上</small>
-                <b id="okuMeterSales">¥0</b>
+                <small>純資産</small>
+                <b id="okuMeterNetAssets">¥0</b>
               </div>
             </div>
 
@@ -302,24 +302,42 @@
               <strong id="okuMeterRemaining">¥100,000,000</strong>
             </article>
             <article>
-              <span>売上を記録した日</span>
-              <strong id="okuMeterRecordDays">0日</strong>
+              <span>総資産</span>
+              <strong id="okuMeterTotalAssets">¥0</strong>
             </article>
             <article>
-              <span>直近30日の売上</span>
-              <strong id="okuMeterRecentSales">¥0</strong>
+              <span>負債</span>
+              <strong id="okuMeterLiabilities">¥0</strong>
             </article>
             <article>
-              <span>これまでの最高月</span>
-              <strong id="okuMeterBestMonthSales">¥0</strong>
-              <small id="okuMeterBestMonth">記録なし</small>
+              <span>記録済み累計売上</span>
+              <strong id="okuMeterLifetimeSales">¥0</strong>
+              <small>資産とは別に集計</small>
             </article>
+          </section>
+
+          <section class="panel asset-editor-panel" aria-labelledby="assetEditorTitle">
+            <div class="panel-heading asset-editor-heading">
+              <div>
+                <span class="asset-editor-kicker">ASSET BREAKDOWN</span>
+                <h2 id="assetEditorTitle">資産の内訳</h2>
+                <p>現在の評価額を区分ごとに入力してください。</p>
+              </div>
+              <span class="asset-local-badge">この端末内だけ</span>
+            </div>
+            <div class="asset-input-grid" id="assetInputs"></div>
+            <dl class="asset-balance-summary">
+              <div><dt>総資産</dt><dd id="assetSummaryTotal">¥0</dd></div>
+              <div><dt>負債</dt><dd id="assetSummaryLiabilities">− ¥0</dd></div>
+              <div class="asset-balance-net"><dt>純資産</dt><dd id="assetSummaryNet">¥0</dd></div>
+            </dl>
+            <p class="asset-editor-note">純資産 ＝ 総資産 − 負債。入力内容はクラウド同期されません。</p>
           </section>
 
           <section class="meter-story-card" aria-live="polite">
             <span>YOUR DELIVERY STORY</span>
             <h3 id="okuMeterMessage">最初の1円が、1億へのスタート。</h3>
-            <p id="okuMeterPeriod">この端末の記録を集計しています。</p>
+            <p id="okuMeterPeriod">この端末に入力した資産を集計しています。</p>
           </section>
         </section>
 

@@ -3,6 +3,16 @@ const ONBOARDING_KEY = "deli-onboarding-complete-v1";
 const LAST_BACKUP_KEY = "deli-last-backup-v1";
 const OKU_METER_GOAL = 100_000_000;
 const OKU_METER_MILESTONES = [1_000_000, 10_000_000, 50_000_000, OKU_METER_GOAL];
+const ASSET_FIELDS = Object.freeze([
+  { id: "cash", label: "現金・預金", icon: "¥", hint: "普通預金・定期預金・現金" },
+  { id: "securities", label: "株式・投資信託", icon: "↗", hint: "国内外株式・投資信託・ETF" },
+  { id: "pension", label: "iDeCo・年金", icon: "○", hint: "iDeCo・企業型DCなど" },
+  { id: "crypto", label: "暗号資産", icon: "◇", hint: "現在の評価額" },
+  { id: "realEstate", label: "不動産", icon: "⌂", hint: "現在の評価額" },
+  { id: "business", label: "事業資産", icon: "▦", hint: "車両・設備・事業用資金など" },
+  { id: "other", label: "その他資産", icon: "+", hint: "上記以外の資産" },
+  { id: "liabilities", label: "負債・ローン", icon: "−", hint: "住宅・車両・カード等の残高", liability: true },
+]);
 
 const TIME_BANDS = Object.freeze([
   { id: "morning", label: "早朝・朝", time: "5:00–10:00", segments: [[5 * 60, 10 * 60]] },
@@ -35,6 +45,7 @@ const state = {
   providers: DEFAULT_PROVIDERS.map((provider) => ({ ...provider })),
   vehicles: [],
   taxProfiles: {},
+  assets: defaultAssetValues(),
 };
 
 const els = {};
@@ -109,17 +120,20 @@ function bindElements() {
     "metricAchievement",
     "okuMeterGauge",
     "okuMeterPercent",
-    "okuMeterSales",
+    "okuMeterNetAssets",
     "okuMeterRail",
     "okuMeterMilestones",
     "okuMeterNext",
     "okuMeterRemaining",
-    "okuMeterRecordDays",
-    "okuMeterRecentSales",
-    "okuMeterBestMonthSales",
-    "okuMeterBestMonth",
+    "okuMeterTotalAssets",
+    "okuMeterLiabilities",
+    "okuMeterLifetimeSales",
     "okuMeterMessage",
     "okuMeterPeriod",
+    "assetInputs",
+    "assetSummaryTotal",
+    "assetSummaryLiabilities",
+    "assetSummaryNet",
     "loadToday",
     "deleteRecord",
     "saveRecord",
@@ -319,6 +333,7 @@ function bindEvents() {
       }
       currentScreen = tab.dataset.screen;
       render();
+      if (currentScreen === "meter") window.scrollTo({ top: 0, behavior: "auto" });
     });
   });
 
@@ -349,6 +364,7 @@ function bindEvents() {
     render();
     closePeriodPicker();
   });
+  els.assetInputs.addEventListener("input", updateAssetValue);
 
   els.saveRecord.addEventListener("click", saveCurrentRecord);
   els.deleteRecord.addEventListener("click", deleteCurrentRecord);
@@ -504,6 +520,7 @@ function snapshotState() {
     providers: state.providers,
     vehicles: state.vehicles,
     taxProfiles: state.taxProfiles,
+    assets: state.assets,
     updatedAt: new Date().toISOString(),
   };
 }
@@ -517,6 +534,7 @@ function applySnapshot(snapshot) {
   state.providers = normalizeProviders(snapshot.providers, state.records);
   state.vehicles = normalizeVehicles(snapshot.vehicles);
   state.taxProfiles = normalizeTaxProfiles(snapshot.taxProfiles);
+  state.assets = normalizeAssetValues(snapshot.assets);
   invalidateOdometerIndex();
 }
 
@@ -589,6 +607,23 @@ function normalizeVehicles(vehicles) {
       : VEHICLE_TYPES[type].label;
     return [{ id, type, label, icon: VEHICLE_TYPES[type].icon, visible: vehicle.visible !== false }];
   });
+}
+
+function defaultAssetValues() {
+  return Object.fromEntries(ASSET_FIELDS.map((field) => [field.id, 0]));
+}
+
+function normalizeAssetValues(values) {
+  const source = isPlainObject(values) ? values : {};
+  return Object.fromEntries(ASSET_FIELDS.map((field) => [field.id, numberValue(source[field.id])]));
+}
+
+function updateAssetValue(event) {
+  const input = event.target.closest("[data-asset-field]");
+  if (!input || !Object.hasOwn(state.assets, input.dataset.assetField)) return;
+  state.assets[input.dataset.assetField] = numberValue(input.value);
+  renderOkuMeter({ syncInputs: false });
+  schedulePersist();
 }
 
 function normalizeTaxProfiles(profiles) {
@@ -2038,55 +2073,68 @@ function renderCurrentMetrics() {
   renderAchievement(els.metricAchievement, achievement, target > 0);
 }
 
-function renderOkuMeter() {
+function renderOkuMeter(options = {}) {
+  const syncInputs = options.syncInputs !== false;
   const records = allRecordedRecords();
-  const summary = summarizeRecords(records);
-  const sales = summary.sales;
-  const progress = sales / OKU_METER_GOAL;
+  const lifetimeSales = summarizeRecords(records).sales;
+  const totalAssets = ASSET_FIELDS
+    .filter((field) => !field.liability)
+    .reduce((sum, field) => sum + numberValue(state.assets[field.id]), 0);
+  const liabilities = numberValue(state.assets.liabilities);
+  const netAssets = totalAssets - liabilities;
+  const progress = Math.max(netAssets, 0) / OKU_METER_GOAL;
   const progressPercent = progress * 100;
   const visualPercent = Math.min(Math.max(progressPercent, 0), 100);
   const percentLabel = formatOkuMeterPercent(progressPercent);
-  const activeRecords = records.filter((record) => Object.values(record.services)
-    .some((service) => numberValue(service.sales) > 0 || integerValue(service.count) > 0));
+  const nextMilestone = OKU_METER_MILESTONES.find((milestone) => netAssets < milestone);
 
-  const recentStart = new Date();
-  recentStart.setHours(0, 0, 0, 0);
-  recentStart.setDate(recentStart.getDate() - 29);
-  const recentSummary = summarizeRecords(recordsBetween(toDateInput(recentStart), todayString()));
-  const bestMonth = bestSalesMonth(records);
-  const nextMilestone = OKU_METER_MILESTONES.find((milestone) => sales < milestone);
+  renderAssetInputs(syncInputs);
 
   els.okuMeterGauge.style.setProperty("--meter-progress", `${visualPercent}%`);
-  els.okuMeterGauge.setAttribute("aria-label", `1億円への達成率 ${percentLabel}、累計売上 ${yen(sales)}`);
+  els.okuMeterGauge.setAttribute("aria-label", `1億円への達成率 ${percentLabel}、純資産 ${assetYen(netAssets)}`);
   els.okuMeterPercent.textContent = percentLabel;
-  els.okuMeterSales.textContent = yen(sales);
+  els.okuMeterNetAssets.textContent = assetYen(netAssets);
   els.okuMeterRail.style.width = `${visualPercent}%`;
-  els.okuMeterRemaining.textContent = yen(Math.max(OKU_METER_GOAL - sales, 0));
-  els.okuMeterRecordDays.textContent = `${formatNumber(activeRecords.length)}日`;
-  els.okuMeterRecentSales.textContent = yen(recentSummary.sales);
-  els.okuMeterBestMonthSales.textContent = yen(bestMonth.sales);
-  els.okuMeterBestMonth.textContent = bestMonth.key ? `${bestMonth.key.slice(0, 4)}年${Number(bestMonth.key.slice(5))}月` : "記録なし";
-  els.okuMeterMessage.textContent = okuMeterMessage(sales, progress);
-
-  if (activeRecords.length) {
-    const dates = activeRecords.map((record) => record.date).sort();
-    els.okuMeterPeriod.textContent = `${formatDate(dates[0])}から${formatDate(dates.at(-1))}まで、この端末の${activeRecords.length}日分を集計。`;
-  } else {
-    els.okuMeterPeriod.textContent = "売上を記録すると、この端末内だけでメーターが進みます。";
-  }
+  els.okuMeterRemaining.textContent = assetYen(Math.max(OKU_METER_GOAL - netAssets, 0));
+  els.okuMeterTotalAssets.textContent = assetYen(totalAssets);
+  els.okuMeterLiabilities.textContent = assetYen(liabilities);
+  els.okuMeterLifetimeSales.textContent = yen(lifetimeSales);
+  els.assetSummaryTotal.textContent = assetYen(totalAssets);
+  els.assetSummaryLiabilities.textContent = `− ${assetYen(liabilities)}`;
+  els.assetSummaryNet.textContent = assetYen(netAssets);
+  els.okuMeterMessage.textContent = okuMeterMessage(netAssets, progress);
+  els.okuMeterPeriod.textContent = `総資産 ${assetYen(totalAssets)} から負債 ${assetYen(liabilities)} を引いた、この端末の純資産を集計。`;
 
   els.okuMeterMilestones.querySelectorAll("[data-milestone]").forEach((item) => {
-    const achieved = sales >= Number(item.dataset.milestone);
+    const achieved = netAssets >= Number(item.dataset.milestone);
     item.classList.toggle("is-achieved", achieved);
     item.setAttribute("aria-label", `${item.textContent.trim()} ${achieved ? "達成" : "未達成"}`);
   });
 
   if (nextMilestone) {
     const labels = { 1000000: "最初の100万円", 10000000: "1,000万円", 50000000: "5,000万円", 100000000: "1億円" };
-    els.okuMeterNext.textContent = `${labels[nextMilestone]}まであと${yen(nextMilestone - sales)}`;
+    els.okuMeterNext.textContent = `${labels[nextMilestone]}まであと${assetYen(nextMilestone - netAssets)}`;
   } else {
-    els.okuMeterNext.textContent = `1億円を達成。現在 ${yen(sales)}`;
+    els.okuMeterNext.textContent = `1億円を達成。現在 ${assetYen(netAssets)}`;
   }
+}
+
+function renderAssetInputs(syncValues = true) {
+  if (!els.assetInputs.childElementCount) {
+    els.assetInputs.innerHTML = ASSET_FIELDS.map((field) => `
+      <label class="asset-input-card${field.liability ? " is-liability" : ""}">
+        <span class="asset-input-copy">
+          <i aria-hidden="true">${field.icon}</i>
+          <span><strong>${field.label}</strong><small>${field.hint}</small></span>
+        </span>
+        <span class="asset-money-input"><b>¥</b><input type="number" min="0" step="10000" inputmode="numeric" data-asset-field="${field.id}" aria-label="${field.label}の現在額" /></span>
+      </label>
+    `).join("");
+  }
+  if (!syncValues) return;
+  els.assetInputs.querySelectorAll("[data-asset-field]").forEach((input) => {
+    input.value = valueOrEmpty(state.assets[input.dataset.assetField]);
+  });
 }
 
 function allRecordedRecords() {
@@ -2095,17 +2143,13 @@ function allRecordedRecords() {
     .map(([date, record]) => normalizeRecord({ ...(isPlainObject(record) ? record : {}), date }));
 }
 
-function bestSalesMonth(records) {
-  const totals = new Map();
-  records.forEach((record) => {
-    const key = monthKey(record.date);
-    const sales = Object.values(record.services).reduce((sum, service) => sum + numberValue(service.sales), 0);
-    totals.set(key, (totals.get(key) || 0) + sales);
-  });
-  return [...totals.entries()].reduce(
-    (best, [key, sales]) => sales > best.sales ? { key, sales } : best,
-    { key: "", sales: 0 }
-  );
+function assetYen(value) {
+  const numeric = Number(value);
+  return new Intl.NumberFormat("ja-JP", {
+    style: "currency",
+    currency: "JPY",
+    maximumFractionDigits: 0,
+  }).format(Math.round(Number.isFinite(numeric) ? numeric : 0));
 }
 
 function formatOkuMeterPercent(value) {
@@ -2117,8 +2161,9 @@ function formatOkuMeterPercent(value) {
   }).format(numeric)}%`;
 }
 
-function okuMeterMessage(sales, progress) {
-  if (sales <= 0) return "最初の1円が、1億へのスタート。";
+function okuMeterMessage(netAssets, progress) {
+  if (netAssets < 0) return "まずは純資産をプラスへ。ここから反転する。";
+  if (netAssets === 0) return "最初の1円が、1億へのスタート。";
   if (progress < 0.01) return "まずは100万円。積み上げはもう始まっている。";
   if (progress < 0.1) return "数字が、挑戦の輪郭をつくっていく。";
   if (progress < 0.5) return "次の桁へ。今日の積み上げを止めない。";
