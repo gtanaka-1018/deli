@@ -93,6 +93,8 @@ test("日・週・月・年を選択したタップだけで即時反映する",
   await page.locator("#loadToday").click();
   await expect(picker).toBeHidden();
 
+  await page.locator("#prevPeriod").click();
+  await expect(page.locator("#selectedDate")).not.toHaveValue(today);
   await page.locator('[data-screen="input"]').click();
   await expect(page.locator("#selectedDate")).toHaveValue(today);
 
