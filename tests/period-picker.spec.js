@@ -24,6 +24,15 @@ test("日・週・月・年を選択したタップだけで即時反映する",
   });
   await page.goto(process.env.DELILOG_TEST_URL || "https://okumeter.com", { waitUntil: "networkidle" });
 
+  const today = await page.evaluate(() => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  });
+  await expect(page.locator("#selectedDate")).toHaveValue(today);
+
   const picker = page.locator("#periodPickerDialog");
   await page.locator("#periodPickerButton").click();
   await expect(picker).toBeVisible();
@@ -42,6 +51,7 @@ test("日・週・月・年を選択したタップだけで即時反映する",
   }));
   await captureLayout();
   await page.locator("#weekViewTab").click();
+  await expect(page.locator("#selectedDate")).toHaveValue(today);
   await page.locator("#periodPickerButton").click();
   await picker.locator('[data-period-date="2026-08-17"]').click();
   await expect(picker).toBeHidden();
@@ -50,6 +60,7 @@ test("日・週・月・年を選択したタップだけで即時反映する",
   await captureLayout();
 
   await page.locator("#monthViewTab").click();
+  await expect(page.locator("#selectedMonth")).toHaveValue(today.slice(0, 7));
   await page.locator("#periodPickerButton").click();
   await picker.locator('[data-period-date="2026-07-01"]').click();
   await expect(picker).toBeHidden();
@@ -58,6 +69,7 @@ test("日・週・月・年を選択したタップだけで即時反映する",
   await captureLayout();
 
   await page.locator("#yearViewTab").click();
+  await expect(page.locator("#selectedYear")).toHaveValue(today.slice(0, 4));
   await page.locator("#periodPickerButton").click();
   await picker.locator('[data-period-date="2025-01-01"]').click();
   await expect(picker).toBeHidden();
@@ -80,6 +92,9 @@ test("日・週・月・年を選択したタップだけで即時反映する",
   await expect(page.locator("#loadToday")).toBeVisible();
   await page.locator("#loadToday").click();
   await expect(picker).toBeHidden();
+
+  await page.locator('[data-screen="input"]').click();
+  await expect(page.locator("#selectedDate")).toHaveValue(today);
 
   const layout = await page.evaluate(() => ({
     viewport: window.innerWidth,

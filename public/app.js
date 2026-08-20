@@ -63,6 +63,7 @@ async function startApp() {
   await loadState();
   await requestPersistentStorage();
   bindEvents();
+  state.selectedDate = todayString();
   fillFormForDate(state.selectedDate);
   render({ shouldPersist: false });
   registerServiceWorker();
@@ -295,6 +296,11 @@ function bindEvents() {
 
   document.querySelectorAll(".screen-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
+      if (tab.dataset.screen === "input" && state.selectedDate !== todayString()) {
+        if (!confirmDiscardDraft()) return;
+        state.selectedDate = todayString();
+        fillFormForDate(state.selectedDate);
+      }
       currentScreen = tab.dataset.screen;
       render();
     });
@@ -302,6 +308,11 @@ function bindEvents() {
 
   document.querySelectorAll(".view-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
+      if (state.selectedDate !== todayString()) {
+        if (!confirmDiscardDraft()) return;
+        state.selectedDate = todayString();
+        fillFormForDate(state.selectedDate);
+      }
       state.view = tab.dataset.view;
       render();
     });
