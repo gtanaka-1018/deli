@@ -19,8 +19,8 @@
       if (!data?.available) throw new Error("traffic unavailable");
       pageviews.textContent = number.format(data.pageviews);
       visitors.textContent = number.format(data.visitors);
-      title.textContent = "億メーターの公開アクセス状況";
-      note.textContent = "Web Analyticsを有効にしてからの匿名集計です";
+      title.textContent = "億メーター本番サイトのアクセス状況";
+      note.textContent = "本番トップページのみ。訪問者は24時間単位の匿名推定です";
       host.dataset.state = "ready";
     })
     .catch(() => {

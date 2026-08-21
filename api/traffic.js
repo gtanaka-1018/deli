@@ -1,6 +1,15 @@
 "use strict";
 
 const ANALYTICS_ENDPOINT = "https://api.vercel.com/v1/query/web-analytics/visits/count";
+const ANALYTICS_FILTER = "environment eq 'production' and requestPath eq '/'";
+
+function analyticsUrl(projectId, teamId = "") {
+  const url = new URL(ANALYTICS_ENDPOINT);
+  url.searchParams.set("projectId", projectId);
+  if (teamId) url.searchParams.set("teamId", teamId);
+  url.searchParams.set("filter", ANALYTICS_FILTER);
+  return url;
+}
 
 function json(response, status, body) {
   response.statusCode = status;
@@ -35,9 +44,7 @@ async function trafficHandler(request, response) {
     return json(response, 503, { available: false });
   }
 
-  const url = new URL(ANALYTICS_ENDPOINT);
-  url.searchParams.set("projectId", projectId);
-  if (teamId) url.searchParams.set("teamId", teamId);
+  const url = analyticsUrl(projectId, teamId);
 
   try {
     const upstream = await fetch(url, {
@@ -56,6 +63,8 @@ async function trafficHandler(request, response) {
     return json(response, 200, {
       available: true,
       ...metrics,
+      scope: "production-root",
+      visitorDefinition: "anonymous-request-hash-24h",
       updatedAt: new Date().toISOString(),
     });
   } catch {
@@ -66,3 +75,5 @@ async function trafficHandler(request, response) {
 
 module.exports = trafficHandler;
 module.exports.normalizeMetrics = normalizeMetrics;
+module.exports.analyticsUrl = analyticsUrl;
+module.exports.ANALYTICS_FILTER = ANALYTICS_FILTER;

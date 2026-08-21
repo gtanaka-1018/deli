@@ -2,6 +2,7 @@ data/
 tmp-deli-sales-test.json
 test-results/
 .vercel/
+supabase/.temp/
 node_modules/
 playwright-report/
 *.log

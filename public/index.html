@@ -50,6 +50,10 @@
           <span class="screen-tab-icon">◉</span>
           <span>メーター</span>
         </button>
+        <button class="screen-tab" type="button" data-screen="ranking" aria-controls="rankingScreen">
+          <span class="screen-tab-icon">★</span>
+          <span>順位</span>
+        </button>
         <button class="screen-tab" type="button" data-screen="plan" aria-controls="planScreen">
           <span class="screen-tab-icon">◎</span>
           <span>計画</span>
@@ -94,6 +98,7 @@
               <div>
                 <h2>配達記録</h2>
               </div>
+              <button class="text-button danger" id="deleteRecord" type="button">削除</button>
             </div>
 
             <div class="daily-calc" aria-label="入力中の集計">
@@ -121,16 +126,20 @@
                 <span>ガソリン単価</span>
                 <strong id="dailyGasUnit">-</strong>
               </div>
+              <div>
+                <span>km単価（売上）</span>
+                <strong id="dailyKmUnit">-</strong>
+              </div>
             </div>
 
             <div class="input-section service-picker-block">
               <div class="field-section-heading">
                 <div>
                   <span class="section-step">1</span>
-                  <strong>配達会社</strong>
+                  <strong>プラットフォーム</strong>
                 </div>
               </div>
-              <div class="service-picker" id="servicePicker" aria-label="配達会社を選択"></div>
+              <div class="service-picker" id="servicePicker" aria-label="プラットフォームを選択"></div>
             </div>
 
             <div class="input-section work-session-field">
@@ -142,6 +151,7 @@
                 <button class="text-button muted" id="addWorkSession" type="button">＋ 時間帯を追加</button>
               </div>
               <div class="work-session-list" id="workSessions"></div>
+              <small class="session-time-help">24時間表記の3〜4桁で入力（例：645 または 0645）</small>
             </div>
 
             <div class="input-section expense-field">
@@ -202,13 +212,6 @@
               </details>
             </div>
 
-            <div class="record-action-dock">
-              <span class="save-status saved" id="saveDockStatus" role="status">保存済み</span>
-              <div class="record-action-buttons">
-                <button class="text-button danger" id="deleteRecord" type="button">削除</button>
-                <button class="text-button primary save-button" id="saveRecord" type="button">この日の記録を保存</button>
-              </div>
-            </div>
           </section>
         </section>
 
@@ -242,6 +245,7 @@
             <article class="metric-tile accent-red">
               <span>達成率</span>
               <strong id="metricAchievement">0%</strong>
+              <small class="metric-target-sales" id="metricTargetSales">目標売上：¥0</small>
             </article>
           </section>
 
@@ -624,6 +628,114 @@
           </section>
         </section>
 
+        <section class="app-screen ranking-screen" id="rankingScreen" data-screen-panel="ranking" hidden>
+          <div class="screen-heading-panel ranking-heading-panel">
+            <div>
+              <span class="ranking-kicker">COMMUNITY RANKING</span>
+              <h2>みんなのランキング</h2>
+              <p>参加者が公開に同意した自己申告データだけを掲載します。</p>
+            </div>
+            <button class="text-button muted" id="rankingRefresh" type="button">更新</button>
+          </div>
+
+          <section class="panel ranking-participation-panel" aria-labelledby="rankingParticipationTitle">
+            <div class="panel-heading">
+              <div>
+                <h2 id="rankingParticipationTitle">ランキングに参加する</h2>
+                <p>参加は任意です。初期状態ではデータを送信しません。</p>
+              </div>
+            </div>
+
+            <div class="ranking-unavailable" id="rankingUnavailable" role="status">
+              <strong>ランキング機能を確認中です</strong>
+              <p>クラウド設定が完了すると利用できます。</p>
+            </div>
+
+            <div class="ranking-auth" id="rankingAuth" hidden>
+              <form class="ranking-login-form" id="rankingLoginForm">
+                <label>
+                  ログイン用メールアドレス
+                  <input id="rankingEmail" type="email" autocomplete="email" required placeholder="name@example.com" />
+                </label>
+                <button class="text-button primary" id="rankingLogin" type="submit">ログインリンクを送る</button>
+                <small>本人確認用です。メールアドレスはランキングに表示されません。</small>
+              </form>
+
+              <div class="ranking-signed-in" id="rankingSignedIn" hidden>
+                <div>
+                  <span>ログイン中</span>
+                  <strong id="rankingSignedInEmail">-</strong>
+                </div>
+                <button class="text-button muted" id="rankingLogout" type="button">ログアウト</button>
+              </div>
+
+              <form class="ranking-consent-form" id="rankingConsentForm" hidden>
+                <fieldset id="rankingConsentFields" disabled>
+                  <label>
+                    ランキング表示名
+                    <input id="rankingDisplayName" type="text" minlength="1" maxlength="20" autocomplete="nickname" placeholder="例：東京ライダー" />
+                    <small class="ranking-field-note">本名、メールアドレス、電話番号などは入力しないでください。</small>
+                  </label>
+
+                  <label class="ranking-consent-option">
+                    <input id="rankingConsent" type="checkbox" />
+                    <span>
+                      <strong>ランキングへの掲載に同意する</strong>
+                      <small>表示名、現在の純資産、直近30日の日付・配達件数・売上金額を公開します。</small>
+                    </span>
+                  </label>
+
+                  <div class="ranking-privacy-note">
+                    <strong>公開しない情報</strong>
+                    <p>メールアドレス、経費、稼働時間、車両、メモ、資産の内訳は送信・公開しません。</p>
+                  </div>
+
+                  <div class="ranking-consent-actions">
+                    <button class="text-button primary" id="rankingSaveConsent" type="submit">参加設定を保存</button>
+                    <small>チェックを外して保存すると、掲載中のランキングデータを削除します。</small>
+                  </div>
+                </fieldset>
+              </form>
+            </div>
+            <p class="ranking-status" id="rankingStatus" aria-live="polite"></p>
+          </section>
+
+          <div class="ranking-grid">
+            <section class="panel ranking-board" aria-labelledby="assetRankingTitle">
+              <div class="ranking-board-heading">
+                <div>
+                  <span>NET ASSETS</span>
+                  <h2 id="assetRankingTitle">純資産ランキング</h2>
+                </div>
+                <small>現在の自己申告額</small>
+              </div>
+              <div class="ranking-table-wrap">
+                <table class="ranking-table">
+                  <thead><tr><th>順位</th><th>表示名</th><th>純資産</th></tr></thead>
+                  <tbody id="assetRankingRows"><tr><td colspan="3">読み込み中</td></tr></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="panel ranking-board" aria-labelledby="salesRankingTitle">
+              <div class="ranking-board-heading">
+                <div>
+                  <span>DAILY SALES / LAST 30 DAYS</span>
+                  <h2 id="salesRankingTitle">日別売上ランキング</h2>
+                </div>
+                <small>直近30日の自己申告</small>
+              </div>
+              <div class="ranking-table-wrap">
+                <table class="ranking-table ranking-sales-table">
+                  <thead><tr><th>順位</th><th>表示名</th><th>日付</th><th>件数</th><th>金額</th></tr></thead>
+                  <tbody id="salesRankingRows"><tr><td colspan="5">読み込み中</td></tr></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+          <p class="ranking-disclaimer">ランキングは参加者の自己申告値です。収益や資産の正確性を保証するものではありません。</p>
+        </section>
+
         <section class="app-screen" id="settingsScreen" data-screen-panel="settings" hidden>
           <section class="panel settings-panel">
             <div class="panel-heading">
@@ -635,9 +747,9 @@
             <section class="settings-section" aria-labelledby="providerSettingsTitle">
               <div class="settings-section-heading">
                 <div>
-                  <h3 id="providerSettingsTitle">配達会社</h3>
+                  <h3 id="providerSettingsTitle">プラットフォーム</h3>
                 </div>
-                <button class="text-button primary" id="addProvider" type="button" aria-haspopup="dialog" aria-controls="providerDialog">＋ 会社を追加</button>
+                <button class="text-button primary" id="addProvider" type="button" aria-haspopup="dialog" aria-controls="providerDialog">＋ プラットフォームを追加</button>
               </div>
               <div class="settings-list" id="providerSettingsList"></div>
             </section>
@@ -675,11 +787,18 @@
         </section>
       </main>
 
+      <div class="record-action-dock" id="recordActionDock" hidden>
+        <span class="save-status saved" id="saveDockStatus" role="status">保存済み</span>
+        <div class="record-action-buttons">
+          <button class="text-button primary save-button" id="saveRecord" type="button">記録を保存</button>
+        </div>
+      </div>
+
       <footer class="public-traffic" data-public-traffic aria-labelledby="publicTrafficTitle">
         <div class="public-traffic-copy">
           <span class="public-traffic-eyebrow">みんなの利用状況</span>
           <strong id="publicTrafficTitle">公開集計を読み込み中</strong>
-          <small id="publicTrafficNote">匿名のアクセス数だけを集計しています</small>
+          <small id="publicTrafficNote">本番トップページの匿名アクセスだけを集計しています</small>
         </div>
         <dl class="public-traffic-metrics" aria-live="polite">
           <div>
@@ -687,7 +806,7 @@
             <dd><span id="publicPageviews">–</span><small>回</small></dd>
           </div>
           <div>
-            <dt>訪問者</dt>
+            <dt>推定訪問者</dt>
             <dd><span id="publicVisitors">–</span><small>人</small></dd>
           </div>
         </dl>
@@ -715,7 +834,7 @@
         <form class="dialog-card" id="serviceDialogForm" method="dialog">
           <div class="dialog-heading">
             <div>
-              <h2 id="serviceDialogTitle">配達会社</h2>
+              <h2 id="serviceDialogTitle">プラットフォーム</h2>
             </div>
             <button class="dialog-close" id="serviceDialogClose" type="button" aria-label="閉じる">×</button>
           </div>
@@ -740,7 +859,7 @@
         <form class="dialog-card" id="providerDialogForm" method="dialog">
           <div class="dialog-heading">
             <div>
-              <h2 id="providerDialogTitle">配達会社を追加</h2>
+              <h2 id="providerDialogTitle">プラットフォームを追加</h2>
             </div>
             <button class="dialog-close" id="providerDialogClose" type="button" aria-label="閉じる">×</button>
           </div>
@@ -750,14 +869,14 @@
               <input id="providerIcon" type="text" maxlength="3" placeholder="例：W" required />
             </label>
             <label>
-              会社名
+              プラットフォーム名
               <input id="providerName" type="text" maxlength="24" placeholder="例：Wolt" required />
             </label>
           </div>
           <p class="dialog-hint">アイコンには文字や絵文字を使えます。</p>
           <div class="dialog-actions">
             <button class="text-button muted" id="providerDialogCancel" type="button">キャンセル</button>
-            <button class="text-button primary" id="providerDialogSubmit" type="submit">会社を追加</button>
+            <button class="text-button primary" id="providerDialogSubmit" type="submit">プラットフォームを追加</button>
           </div>
         </form>
       </dialog>
@@ -881,6 +1000,7 @@
     <script src="tax-calculator.js"></script>
     <script src="app.js"></script>
     <script src="traffic.js"></script>
+    <script src="ranking.js"></script>
     <script>
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
