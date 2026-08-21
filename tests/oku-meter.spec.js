@@ -87,7 +87,7 @@ test("区分別の純資産を保存して1億円への進捗としてスマホ�
     documentWidth: document.documentElement.scrollWidth,
     navItems: document.querySelectorAll("#primaryNav .screen-tab").length,
   }));
-  expect(layout.navItems).toBe(6);
+  expect(layout.navItems).toBe(7);
   expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewport + 1);
 
   await page.locator('[data-asset-field="cash"]').fill("3000000");

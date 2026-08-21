@@ -120,6 +120,7 @@ function bindElements() {
     "metricProfit",
     "metricHourly",
     "metricAchievement",
+    "metricTargetSales",
     "okuMeterGauge",
     "okuMeterPercent",
     "okuMeterNetAssets",
@@ -139,6 +140,7 @@ function bindElements() {
     "loadToday",
     "deleteRecord",
     "saveRecord",
+    "recordActionDock",
     "monthlyTarget",
     "planPercent",
     "planProgress",
@@ -153,6 +155,7 @@ function bindElements() {
     "dailyWorkHours",
     "dailyHourly",
     "dailyGasUnit",
+    "dailyKmUnit",
     "reportTitle",
     "dayReport",
     "weekReport",
@@ -188,6 +191,7 @@ function bindElements() {
     "inputScreen",
     "summaryScreen",
     "meterScreen",
+    "rankingScreen",
     "planScreen",
     "taxScreen",
     "saveDockStatus",
@@ -394,6 +398,7 @@ function bindEvents() {
 
   document.querySelector(".input-panel").addEventListener("input", (event) => {
     if (event.target.matches("[data-session-field]") || event.target === els.breakHours) {
+      if (event.target.matches("[data-session-field]")) event.target.setCustomValidity("");
       clearImportedWorkHoursOverride();
       updateManualHoursState();
     }
@@ -470,6 +475,12 @@ function bindEvents() {
     const button = event.target.closest("[data-remove-session]");
     if (button) removeWorkSession(Number(button.dataset.removeSession));
   });
+  els.workSessions.addEventListener("focusout", (event) => {
+    const input = event.target.closest("[data-session-field]");
+    if (!input || !input.value.trim()) return;
+    const normalized = normalizeTime(input.value);
+    if (normalized) input.value = timeInputValue(normalized);
+  });
 
   els.exportJson.addEventListener("click", exportBackup);
   els.importJson.addEventListener("change", importBackup);
@@ -502,6 +513,7 @@ async function persist() {
     throw new Error("Unable to save data");
   }
 
+  window.dispatchEvent(new Event("deli:data-saved"));
   return { browserOk };
 }
 
@@ -526,6 +538,41 @@ function snapshotState() {
     updatedAt: new Date().toISOString(),
   };
 }
+
+function publishableRankingSnapshot() {
+  const cutoff = new Date();
+  cutoff.setHours(0, 0, 0, 0);
+  cutoff.setDate(cutoff.getDate() - 29);
+  const cutoffDate = toDateInput(cutoff);
+  const today = todayString();
+  const dailySales = Object.entries(state.records)
+    .filter(([date]) => date >= cutoffDate && date <= today)
+    .map(([date, record]) => {
+      const summary = summarizeRecords([
+        normalizeRecord({ ...(isPlainObject(record) ? record : {}), date }),
+      ]);
+      return {
+        date,
+        count: Math.max(0, Math.round(summary.count)),
+        sales: Math.max(0, Math.round(summary.sales)),
+      };
+    })
+    .filter((entry) => entry.count > 0 || entry.sales > 0)
+    .sort((left, right) => right.date.localeCompare(left.date));
+  const totalAssets = ASSET_FIELDS
+    .filter((field) => !field.liability)
+    .reduce((sum, field) => sum + numberValue(state.assets[field.id]), 0);
+  const liabilities = numberValue(state.assets.liabilities);
+
+  return {
+    netAssets: Math.round(totalAssets - liabilities),
+    dailySales,
+  };
+}
+
+window.DeliRankingData = Object.freeze({
+  getPublishableSnapshot: publishableRankingSnapshot,
+});
 
 function applySnapshot(snapshot) {
   state.view = ["day", "week", "month", "year"].includes(snapshot.view) ? snapshot.view : "day";
@@ -867,7 +914,7 @@ function renderOdometerHint(record) {
 function renderServiceButtons() {
   const visibleProviders = state.providers.filter((provider) => provider.visible !== false);
   if (visibleProviders.length === 0) {
-    els.servicePicker.innerHTML = `<p class="settings-empty">設定画面で入力する配達会社を表示してください</p>`;
+    els.servicePicker.innerHTML = `<p class="settings-empty">設定画面で入力するプラットフォームを表示してください</p>`;
     return;
   }
   els.servicePicker.innerHTML = visibleProviders.map((service) => {
@@ -941,8 +988,8 @@ function openProviderDialog(providerId = "", trigger = els.addProvider) {
   const provider = state.providers.find((item) => item.id === providerId);
   editingProviderId = provider?.id || "";
   providerDialogTrigger = trigger;
-  els.providerDialogTitle.textContent = provider ? "配達会社を編集" : "配達会社を追加";
-  els.providerDialogSubmit.textContent = provider ? "変更を保存" : "会社を追加";
+  els.providerDialogTitle.textContent = provider ? "プラットフォームを編集" : "プラットフォームを追加";
+  els.providerDialogSubmit.textContent = provider ? "変更を保存" : "プラットフォームを追加";
   els.providerIcon.value = provider?.icon || "";
   els.providerName.value = provider?.label || "";
   els.providerName.setCustomValidity("");
@@ -963,7 +1010,7 @@ function applyProviderDialog(event) {
     provider.id !== editingProviderId && provider.label.toLowerCase() === label.toLowerCase()
   ));
   if (duplicate) {
-    els.providerName.setCustomValidity("同じ名前の配達会社が登録されています");
+    els.providerName.setCustomValidity("同じ名前のプラットフォームが登録されています");
     els.providerName.reportValidity();
     return;
   }
@@ -1293,8 +1340,13 @@ function renderWorkSessionRows(sessions) {
           <label class="session-time-field">
             開始
             <input
-              type="time"
-              value="${escapeHtml(normalized.startTime)}"
+              type="text"
+              value="${escapeHtml(timeInputValue(normalized.startTime))}"
+              inputmode="numeric"
+              autocomplete="off"
+              maxlength="4"
+              pattern="[0-9]{3,4}"
+              placeholder="例：0645"
               data-session-index="${index}"
               data-session-field="startTime"
               aria-label="時間帯 ${index + 1} の開始"
@@ -1303,8 +1355,13 @@ function renderWorkSessionRows(sessions) {
           <label class="session-time-field">
             終了
             <input
-              type="time"
-              value="${escapeHtml(normalized.endTime)}"
+              type="text"
+              value="${escapeHtml(timeInputValue(normalized.endTime))}"
+              inputmode="numeric"
+              autocomplete="off"
+              maxlength="4"
+              pattern="[0-9]{3,4}"
+              placeholder="例：1200"
               data-session-index="${index}"
               data-session-field="endTime"
               aria-label="時間帯 ${index + 1} の終了"
@@ -1382,6 +1439,11 @@ function incompleteWorkSession() {
     .find(Boolean);
 }
 
+function invalidWorkSessionTime() {
+  return [...els.workSessions.querySelectorAll("[data-session-field]")]
+    .find((input) => input.value.trim() && !normalizeTime(input.value));
+}
+
 function overlappingWorkSessions() {
   const sessions = readWorkSessionRows()
     .map((session, index) => ({ ...normalizeWorkSession(session), index }))
@@ -1425,6 +1487,7 @@ function markFormDirty() {
 function setSaveStatus(message, status) {
   els.saveDockStatus.textContent = message;
   els.saveDockStatus.className = `save-status ${status}`;
+  els.recordActionDock.hidden = status === "saved";
 }
 
 function confirmDiscardDraft(message = "未保存の入力があります。破棄して日付を移動しますか？") {
@@ -1432,6 +1495,14 @@ function confirmDiscardDraft(message = "未保存の入力があります。破�
 }
 
 async function saveCurrentRecord() {
+  const invalidTimeInput = invalidWorkSessionTime();
+  if (invalidTimeInput) {
+    invalidTimeInput.setCustomValidity("0000〜2359の時刻を3〜4桁で入力してください");
+    invalidTimeInput.reportValidity();
+    invalidTimeInput.focus();
+    showToast("稼働時間は24時間表記の3〜4桁で入力してください");
+    return;
+  }
   const incomplete = incompleteWorkSession();
   if (incomplete) {
     incomplete.missingInput.focus();
@@ -2061,6 +2132,7 @@ function renderDailyPreview() {
   els.dailyWorkHours.textContent = formatHours(total.workHours);
   els.dailyHourly.textContent = yen(total.hourly);
   els.dailyGasUnit.textContent = total.gasUnit > 0 ? `${yen(total.gasUnit)}/L` : "-";
+  els.dailyKmUnit.textContent = total.kmUnit > 0 ? `${yen(total.kmUnit)}/km` : "-";
   renderOdometerHint(record);
 }
 
@@ -2073,6 +2145,7 @@ function renderCurrentMetrics() {
   els.metricProfit.textContent = yen(summary.profit);
   els.metricHourly.textContent = yen(summary.hourly);
   renderAchievement(els.metricAchievement, achievement, target > 0);
+  els.metricTargetSales.textContent = `目標売上：${yen(target)}`;
 }
 
 function renderOkuMeter(options = {}) {
@@ -2236,6 +2309,7 @@ function renderDayReport() {
         ["件数", `${summary.count}件`],
         ["稼働時間", formatHours(summary.workHours)],
         ["車両", vehicle?.label || "-"],
+        ["km単価（売上）", summary.kmUnit > 0 ? `${yen(summary.kmUnit)}/km` : "-"],
         ["ガソリン単価", summary.gasUnit > 0 ? `${yen(summary.gasUnit)}/L` : "-"],
       ])}
     </div>
@@ -2443,6 +2517,7 @@ function summaryGrid(summary, target) {
       ${summaryTile("稼働時間", formatHours(summary.workHours))}
       ${summaryTile("時給", yen(summary.hourly))}
       ${summaryTile("走行距離", `${formatNumber(summary.distanceKm)}km`)}
+      ${summaryTile("km単価（売上）", summary.kmUnit > 0 ? `${yen(summary.kmUnit)}/km` : "-")}
       ${summaryTile("経費", yen(summary.expense))}
       ${summaryTile("利益", yen(summary.profit))}
       ${summaryTile("目標達成率", achievementMarkup(achievement, target > 0), "achievement-summary-tile")}
@@ -2644,7 +2719,7 @@ function summaryTile(label, value, className = "") {
 }
 
 function achievementMarkup(value, hasTarget = true) {
-  const percentage = hasTarget ? percent(value) : "—";
+  const percentage = hasTarget ? `${Math.round(numberValue(value) * 100)}%` : "—";
   return `<span class="achievement-percent">${percentage}</span>`;
 }
 
@@ -2691,21 +2766,27 @@ function summarizeRecords(records) {
     profit: 0,
     hourly: 0,
     gasUnit: 0,
+    kmUnitSales: 0,
+    kmUnit: 0,
     services: Object.fromEntries(state.providers.map((provider) => [provider.id, { count: 0, sales: 0 }])),
   };
 
   records.map(normalizeRecord).forEach((record) => {
+    let recordSales = 0;
     Object.entries(record.services).forEach(([id, item]) => {
       if (!summary.services[id]) summary.services[id] = { count: 0, sales: 0 };
       summary.services[id].count += item.count;
       summary.services[id].sales += item.sales;
       summary.count += item.count;
       summary.sales += item.sales;
+      recordSales += item.sales;
     });
     summary.workHours += calculateWorkHours(record, record.workHours);
-    summary.distanceKm += record.odometerKm > 0
+    const recordDistanceKm = record.odometerKm > 0
       ? calculateDailyDistance(record.date, record.odometerKm, record.vehicleId)
       : record.distanceKm;
+    summary.distanceKm += recordDistanceKm;
+    if (recordDistanceKm > 0) summary.kmUnitSales += recordSales;
     summary.gasCost += record.gasCost;
     summary.gasCostForUnit += record.expenses
       .filter((expense) => expense.type === "gas" && expense.liters > 0)
@@ -2718,6 +2799,7 @@ function summarizeRecords(records) {
   summary.profit = summary.sales - summary.expense;
   summary.hourly = summary.workHours > 0 ? summary.sales / summary.workHours : 0;
   summary.gasUnit = summary.fuelLiters > 0 ? summary.gasCostForUnit / summary.fuelLiters : 0;
+  summary.kmUnit = summary.distanceKm > 0 ? summary.kmUnitSales / summary.distanceKm : 0;
   return summary;
 }
 
@@ -2976,13 +3058,27 @@ function normalizeWorkSession(session) {
 
 function normalizeTime(value) {
   if (typeof value !== "string") return "";
-  const [hoursText, minutesText] = value.split(":");
+  const normalizedText = value
+    .trim()
+    .replace(/[０-９]/g, (digit) => String(digit.charCodeAt(0) - 0xfee0))
+    .replace("：", ":");
+  const compactMatch = normalizedText.match(/^\d{3,4}$/);
+  const timeText = compactMatch
+    ? normalizedText.padStart(4, "0").replace(/^(\d{2})(\d{2})$/, "$1:$2")
+    : normalizedText;
+  const match = timeText.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return "";
+  const [, hoursText, minutesText] = match;
   const hours = Number(hoursText);
   const minutes = Number(minutesText);
   if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
     return "";
   }
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function timeInputValue(value) {
+  return normalizeTime(value).replace(":", "");
 }
 
 function calculateWorkHours(record, fallbackHours = 0) {

@@ -1,4 +1,4 @@
-const CACHE_NAME = "okumeter-v15";
+const CACHE_NAME = "okumeter-v19";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -7,6 +7,7 @@ const APP_SHELL = [
   "/tax-calculator.js",
   "/app.js",
   "/traffic.js",
+  "/ranking.js",
   "/manifest.webmanifest",
   "/app-icon.png",
 ];
