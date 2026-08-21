@@ -138,7 +138,6 @@ function bindElements() {
     "assetSummaryLiabilities",
     "assetSummaryNet",
     "loadToday",
-    "deleteRecord",
     "saveRecord",
     "recordActionDock",
     "monthlyTarget",
@@ -373,7 +372,6 @@ function bindEvents() {
   els.assetInputs.addEventListener("input", updateAssetValue);
 
   els.saveRecord.addEventListener("click", saveCurrentRecord);
-  els.deleteRecord.addEventListener("click", deleteCurrentRecord);
   els.monthlyTarget.addEventListener("input", () => {
     const key = monthKey(state.selectedDate);
     const value = numberValue(els.monthlyTarget.value);
@@ -1546,27 +1544,6 @@ async function saveCurrentRecord() {
       setSaveStatus("保存に失敗", "error");
     }
     showToast(`${formatDate(saveDate)} を保存できませんでした`);
-  }
-}
-
-async function deleteCurrentRecord() {
-  if (!state.records[state.selectedDate]) {
-    showToast("削除する記録がありません");
-    return;
-  }
-
-  if (!confirm(`${formatDate(state.selectedDate)} の記録を削除しますか？`)) return;
-  const deleteDate = state.selectedDate;
-  delete state.records[deleteDate];
-  invalidateOdometerIndex();
-
-  try {
-    await persist();
-    fillFormForDate(state.selectedDate);
-    render({ shouldPersist: false });
-    showToast("削除しました");
-  } catch {
-    showToast("削除後の保存に失敗しました");
   }
 }
 
