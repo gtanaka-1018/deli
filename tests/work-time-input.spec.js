@@ -17,6 +17,7 @@ test("稼働時刻を3〜4桁で入力し、未保存時だけ保存ボタンを
 
   await expect(start).toHaveAttribute("type", "text");
   await expect(start).toHaveAttribute("inputmode", "numeric");
+  await expect(page.locator("#deleteRecord")).toHaveCount(0);
   await expect(dock).toBeHidden();
 
   await start.fill("645");
