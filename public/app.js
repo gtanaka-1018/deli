@@ -46,6 +46,7 @@ const state = {
   targets: {},
   providers: DEFAULT_PROVIDERS.map((provider) => ({ ...provider })),
   vehicles: [],
+  lastVehicleId: "",
   taxProfiles: {},
   assets: defaultAssetValues(),
 };
@@ -531,6 +532,7 @@ function snapshotState() {
     targets: state.targets,
     providers: state.providers,
     vehicles: state.vehicles,
+    lastVehicleId: state.lastVehicleId,
     taxProfiles: state.taxProfiles,
     assets: state.assets,
     updatedAt: new Date().toISOString(),
@@ -580,6 +582,7 @@ function applySnapshot(snapshot) {
   state.targets = isPlainObject(snapshot.targets) ? snapshot.targets : {};
   state.providers = normalizeProviders(snapshot.providers, state.records);
   state.vehicles = normalizeVehicles(snapshot.vehicles);
+  state.lastVehicleId = validVisibleVehicleId(snapshot.lastVehicleId) || latestRecordedVehicleId();
   state.taxProfiles = normalizeTaxProfiles(snapshot.taxProfiles);
   state.assets = normalizeAssetValues(snapshot.assets);
   invalidateOdometerIndex();
@@ -654,6 +657,20 @@ function normalizeVehicles(vehicles) {
       : VEHICLE_TYPES[type].label;
     return [{ id, type, label, icon: VEHICLE_TYPES[type].icon, visible: vehicle.visible !== false }];
   });
+}
+
+function validVisibleVehicleId(vehicleId) {
+  if (typeof vehicleId !== "string") return "";
+  return state.vehicles.some((vehicle) => vehicle.id === vehicleId && vehicle.visible !== false)
+    ? vehicleId
+    : "";
+}
+
+function latestRecordedVehicleId() {
+  return Object.entries(state.records)
+    .sort(([leftDate], [rightDate]) => rightDate.localeCompare(leftDate))
+    .map(([, record]) => validVisibleVehicleId(record?.vehicleId))
+    .find(Boolean) || "";
 }
 
 function defaultAssetValues() {
@@ -739,7 +756,8 @@ function blankRecord(date) {
 
 function fillFormForDate(date) {
   formRevision += 1;
-  const record = normalizeRecord(state.records[date] || blankRecord(date));
+  const savedRecord = state.records[date];
+  const record = normalizeRecord(savedRecord || blankRecord(date));
   els.selectedDate.value = date;
 
   draftServices = Object.fromEntries(
@@ -758,7 +776,7 @@ function fillFormForDate(date) {
       : hoursValueOrEmpty(record.workHours);
   els.workHoursOverrideHint.hidden = importedHours <= 0;
   els.breakHours.value = valueOrEmpty(record.breakHours);
-  renderVehicleSelect(record.vehicleId);
+  renderVehicleSelect(savedRecord ? record.vehicleId : validVisibleVehicleId(state.lastVehicleId));
   els.odometerKm.value = valueOrEmpty(record.odometerKm);
   renderOdometerHint(record);
   draftExpenses = record.expenses.map((expense) => ({ ...expense }));
@@ -933,6 +951,7 @@ function renderServiceButtons() {
           <span class="service-values">
             <strong>${count}件</strong>
             <strong>${yen(sales)}</strong>
+            ${count > 0 ? `<small class="service-unit-price">単価 ${yen(sales / count)}/件</small>` : ""}
           </span>
         </button>
       </div>
@@ -1519,6 +1538,7 @@ async function saveCurrentRecord() {
   const revisionAtSave = formRevision;
   const record = readFormRecord();
   state.records[saveDate] = record;
+  if (record.vehicleId) state.lastVehicleId = record.vehicleId;
   invalidateOdometerIndex();
   setSaveStatus("保存中…", "saving");
 
@@ -1551,6 +1571,7 @@ async function clearAllData() {
   if (!confirm("すべての記録と目標売上を削除しますか？")) return;
   state.records = {};
   state.targets = {};
+  state.lastVehicleId = "";
   invalidateOdometerIndex();
   clearTimeout(persistTimer);
 
@@ -2106,9 +2127,11 @@ function renderDailyPreview() {
   els.dailySales.textContent = yen(total.sales);
   els.dailyProfit.textContent = yen(total.profit);
   els.dailyExpense.textContent = yen(total.expense);
+  els.dailyExpense.parentElement.hidden = total.expense <= 0;
   els.dailyWorkHours.textContent = formatHours(total.workHours);
   els.dailyHourly.textContent = yen(total.hourly);
   els.dailyGasUnit.textContent = total.gasUnit > 0 ? `${yen(total.gasUnit)}/L` : "-";
+  els.dailyGasUnit.parentElement.hidden = total.gasUnit <= 0;
   els.dailyKmUnit.textContent = total.kmUnit > 0 ? `${yen(total.kmUnit)}/km` : "-";
   renderOdometerHint(record);
 }
@@ -2672,7 +2695,10 @@ function serviceSummaryGrid(summary) {
               <b class="summary-service-icon">${escapeHtml(service.icon)}</b>
               <span class="service-summary-name">${escapeHtml(service.label)}</span>
             </span>
-            <strong>${item.count}件 / ${yen(item.sales)}</strong>
+            <span class="service-summary-values">
+              <strong>${item.count}件 / ${yen(item.sales)}</strong>
+              ${item.count > 0 ? `<small>単価 ${yen(item.sales / item.count)}/件</small>` : ""}
+            </span>
           </div>
         `;
       }).join("")}
@@ -3098,6 +3124,7 @@ function exportBackup() {
       targets: state.targets,
       providers: state.providers,
       vehicles: state.vehicles,
+      lastVehicleId: state.lastVehicleId,
       taxYear: state.taxYear,
       taxProfiles: state.taxProfiles,
     },
@@ -3141,6 +3168,7 @@ function importBackup(event) {
       state.targets = parsed.targets || {};
       state.providers = normalizeProviders(parsed.providers, state.records);
       state.vehicles = normalizeVehicles(parsed.vehicles);
+      state.lastVehicleId = validVisibleVehicleId(parsed.lastVehicleId) || latestRecordedVehicleId();
       state.taxYear = Number(parsed.taxYear) || state.taxYear;
       state.taxProfiles = normalizeTaxProfiles(parsed.taxProfiles);
       invalidateOdometerIndex();

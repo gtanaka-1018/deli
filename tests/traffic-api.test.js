@@ -19,10 +19,13 @@ test("不正な集計レスポンスは公開しない", () => {
   assert.equal(normalizeMetrics(null), null);
 });
 
-test("公開集計は本番環境のトップページだけに限定する", () => {
+test("公開集計は本番環境のトップページと流入分析用パスに限定する", () => {
   const url = analyticsUrl("project_123", "team_456");
   assert.equal(url.searchParams.get("projectId"), "project_123");
   assert.equal(url.searchParams.get("teamId"), "team_456");
   assert.equal(url.searchParams.get("filter"), ANALYTICS_FILTER);
-  assert.equal(ANALYTICS_FILTER, "environment eq 'production' and requestPath eq '/'");
+  assert.equal(
+    ANALYTICS_FILTER,
+    "environment eq 'production' and (requestPath eq '/' or requestPath eq '/referral/x' or requestPath eq '/referral/instagram')"
+  );
 });

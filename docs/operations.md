@@ -1,6 +1,6 @@
 # 億メーター運用ガイド
 
-更新日: 2026-08-20
+更新日: 2026-08-23
 
 ## 公開先と正本
 
@@ -25,7 +25,16 @@
 
 Vercel Web Analyticsの読込コードを公開ページに設置している。Vercelダッシュボードの対象プロジェクトでWeb Analyticsを有効化し、再デプロイすると、日時、ページビュー、国、端末種別、OS、ブラウザーなどの詳細をプロジェクト所有者が確認できる。
 
-公開ページ下部には、Web Analyticsを有効化してからの「ページ閲覧」と「推定訪問者」の匿名集計だけを表示する。`/api/traffic` がVercel Web Analytics APIをサーバー側で読み、本番環境のトップページ（`environment = production`、`requestPath = /`）だけに絞って、ブラウザーへ2つの集計値を返す。Preview環境や別パスの閲覧は公開値へ含めない。売上・経費などの入力内容は取得も公開もしない。
+公開ページ下部には、Web Analyticsを有効化してからの「ページ閲覧」と「推定訪問者」の匿名集計だけを表示する。`/api/traffic` がVercel Web Analytics APIをサーバー側で読み、本番環境のトップページと後述する2つの流入分析用パスだけに絞って、ブラウザーへ2つの集計値を返す。Preview環境やそれ以外のパスの閲覧は公開値へ含めない。売上・経費などの入力内容は取得も公開もしない。
+
+XとInstagramからの流入を分けて確認するときは、次の共有URLを使用する。
+
+- X: `https://okumeter.com/?utm_source=x&utm_medium=social`
+- Instagram: `https://okumeter.com/?utm_source=instagram&utm_medium=social`
+
+`public/referral.js` は `utm_source` を優先し、パラメーターがない場合は `t.co`、`x.com`、`twitter.com`、`instagram.com` の参照元から流入元を補完する。該当する初回ページビューだけを、Vercel Web Analytics上で `/referral/x` または `/referral/instagram` として匿名集計する。Vercelのプロジェクト画面で Analytics → Pages を開くと、X経由とInstagram経由を分けて確認できる。参照元を送らないアプリ内ブラウザーもあるため、SNSへ掲載するリンクには上記の `utm_source` を付ける。
+
+公開ページ下部の合計値には、`/` に加えてこの2つの分析用パスも含める。分析用URLからクエリ文字列は除去し、売上・経費などの入力内容は送信しない。
 
 「推定訪問者」は実人数ではない。Vercelがリクエストから生成する匿名ハッシュを使い、24時間単位で同一訪問者を推定する。同じ人でも24時間経過後、ネットワーク・ブラウザー・端末などが変わった場合は別の訪問者として数えられる可能性がある。反対に、共有端末などは同一と判定される可能性がある。ログインなしで実人数を厳密に確定することはできないため、画面上も「推定訪問者」と表記する。
 

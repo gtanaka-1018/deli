@@ -571,14 +571,22 @@ input:disabled {
 
 .service-values {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 10px;
   color: var(--muted);
   font-size: 12px;
 }
 
-.service-values strong:last-child {
+.service-values strong:last-of-type {
   color: var(--ink);
+}
+
+.service-unit-price {
+  flex-basis: 100%;
+  color: var(--green);
+  font-weight: 800;
+  text-align: right;
 }
 
 .work-session-list {
@@ -952,6 +960,31 @@ label {
   font-size: 14px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.service-summary-values {
+  display: grid;
+  gap: 3px;
+  text-align: right;
+}
+
+.service-summary-values strong,
+.service-summary-values small {
+  display: block;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.service-summary-values strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.service-summary-values small {
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .service-summary-grid {
@@ -2997,6 +3030,10 @@ body {
     align-items: flex-start;
     flex-direction: column;
     gap: 3px;
+  }
+
+  .service-unit-price {
+    text-align: left;
   }
 
   .provider-fields {
