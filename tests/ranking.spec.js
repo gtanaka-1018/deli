@@ -102,11 +102,23 @@ test("同意したユーザーだけが資産と日別売上をランキング�
   expect(syncCall.args.p_net_assets).toBe(1500000);
   expect(syncCall.args.p_daily_sales).toEqual([{ date: today, count: 8, sales: 8000 }]);
 
-  await page.locator("#rankingConsent").uncheck();
-  await page.locator("#rankingSaveConsent").click();
+  await expect(page.locator("#rankingDeleteData")).toBeVisible();
+
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page.locator("#rankingDeleteData").click();
+  let leaveCalls = await page.evaluate(() => window.__rankingCalls.filter((call) => call.name === "leave_rankings").length);
+  expect(leaveCalls).toBe(0);
+
+  page.once("dialog", (dialog) => {
+    expect(dialog.message()).toContain("端末内の配達記録とログインアカウントは削除されません");
+    dialog.accept();
+  });
+  await page.locator("#rankingDeleteData").click();
   await expect(page.locator("#rankingStatus")).toContainText("公開データを削除しました");
-  const leaveCalls = await page.evaluate(() => window.__rankingCalls.filter((call) => call.name === "leave_rankings").length);
+  leaveCalls = await page.evaluate(() => window.__rankingCalls.filter((call) => call.name === "leave_rankings").length);
   expect(leaveCalls).toBe(1);
+  await expect(page.locator("#rankingDeleteData")).toBeHidden();
+  await expect(page.locator("#rankingDisplayName")).toHaveValue("");
 
   const layout = await page.evaluate(() => ({
     viewport: window.innerWidth,

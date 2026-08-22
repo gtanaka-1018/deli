@@ -2718,6 +2718,37 @@ body {
   font-size: 11px;
 }
 
+.ranking-delete-zone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px;
+  border: 1px solid var(--red);
+  border-radius: 12px;
+  background: var(--red-soft);
+}
+
+.ranking-delete-zone strong,
+.ranking-delete-zone small {
+  display: block;
+}
+
+.ranking-delete-zone small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.ranking-delete-zone .text-button {
+  flex: 0 0 auto;
+  border-color: var(--red);
+  background: var(--surface);
+  white-space: nowrap;
+}
+
 .ranking-status {
   min-height: 20px;
   margin: 12px 0 0;
@@ -2940,9 +2971,19 @@ body {
     flex-direction: column;
   }
 
+  .ranking-delete-zone {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .ranking-heading-panel .text-button,
   .ranking-consent-actions .text-button {
     width: 100%;
+  }
+
+  .ranking-delete-zone .text-button {
+    width: 100%;
+    white-space: normal;
   }
 
   .ranking-login-form {

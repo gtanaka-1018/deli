@@ -68,6 +68,8 @@
       displayName: "rankingDisplayName",
       consent: "rankingConsent",
       saveConsent: "rankingSaveConsent",
+      deleteZone: "rankingDeleteZone",
+      deleteData: "rankingDeleteData",
       status: "rankingStatus",
       refresh: "rankingRefresh",
       assetRows: "assetRankingRows",
@@ -83,6 +85,7 @@
     elements.logout.addEventListener("click", logout);
     elements.consentForm.addEventListener("submit", saveParticipation);
     elements.consent.addEventListener("change", updateConsentRequirements);
+    elements.deleteData.addEventListener("click", deleteRankingData);
     elements.refresh.addEventListener("click", loadPublicRankings);
     window.addEventListener("deli:data-saved", scheduleAutomaticSync);
   }
@@ -132,6 +135,8 @@
       return;
     }
 
+    participation = null;
+    updateConsentRequirements();
     setStatus("参加状況を確認しています…");
     const { data, error } = await client.rpc("get_my_ranking_status");
     if (error) {
@@ -180,13 +185,19 @@
   }
 
   function updateConsentRequirements() {
+    const isParticipating = participation?.active === true;
     elements.displayName.required = elements.consent.checked;
     elements.saveConsent.textContent = elements.consent.checked
       ? "参加内容を保存"
-      : participation?.active
+      : isParticipating
         ? "掲載を解除する"
         : "参加しない";
-    if (!syncing) elements.saveConsent.disabled = !elements.consent.checked && !participation?.active;
+    elements.deleteData.hidden = !isParticipating;
+    elements.deleteZone.hidden = !isParticipating;
+    if (!syncing) {
+      elements.saveConsent.disabled = !elements.consent.checked && !isParticipating;
+      elements.deleteData.disabled = !isParticipating;
+    }
   }
 
   async function saveParticipation(event) {
@@ -194,7 +205,7 @@
     if (!session?.user) return;
 
     if (!elements.consent.checked) {
-      await leaveRankings();
+      await leaveRankings(true);
       return;
     }
 
@@ -213,6 +224,7 @@
 
     syncing = true;
     elements.saveConsent.disabled = true;
+    elements.deleteData.disabled = true;
     if (!silent) setStatus("ランキングを更新しています…");
     const { error } = await client.rpc("sync_my_rankings", {
       p_display_name: displayName,
@@ -220,9 +232,9 @@
       p_daily_sales: snapshot.dailySales,
     });
     syncing = false;
-    elements.saveConsent.disabled = false;
 
     if (error) {
+      updateConsentRequirements();
       if (!silent) setStatus("ランキングを更新できませんでした", "error");
       return;
     }
@@ -235,21 +247,31 @@
     await loadPublicRankings();
   }
 
-  async function leaveRankings() {
-    if (syncing) return;
+  function deleteRankingData() {
+    return leaveRankings(true);
+  }
+
+  async function leaveRankings(requireConfirmation = false) {
+    if (syncing || !participation?.active) return;
+    if (requireConfirmation && !confirm(
+      "ランキングに公開した表示名、純資産、日別売上をすべて削除しますか？\n端末内の配達記録とログインアカウントは削除されません。"
+    )) return;
+
     syncing = true;
     elements.saveConsent.disabled = true;
+    elements.deleteData.disabled = true;
     setStatus("掲載データを削除しています…");
     const { error } = await client.rpc("leave_rankings");
     syncing = false;
-    elements.saveConsent.disabled = false;
 
     if (error) {
+      updateConsentRequirements();
       setStatus("掲載を解除できませんでした", "error");
       return;
     }
 
-    participation = { active: false, displayName: elements.displayName.value.trim() };
+    participation = { active: false, displayName: "" };
+    elements.displayName.value = "";
     elements.consent.checked = false;
     updateConsentRequirements();
     setStatus("ランキング掲載を解除し、公開データを削除しました", "success");
