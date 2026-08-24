@@ -7,25 +7,80 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="億メーター" />
-    <meta name="description" content="配達の売上・経費・税金を記録し、資産1億円への道を見える化する収益管理ツールです。" />
-    <meta property="og:title" content="億メーター | 配達収益管理" />
-    <meta property="og:description" content="配達の数字を記録して、資産1億円への道を見える化。" />
+    <meta name="description" content="Uber Eats・出前館・Woltなど、フードデリバリー配達員の売上・経費・稼働時間を無料で記録。時給や手残り、確定申告の税額目安、資産1億円までの進捗を見える化します。" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="author" content="億メーター" />
+    <meta property="og:title" content="フードデリバリー配達員の売上・経費・税金管理 | 億メーター" />
+    <meta property="og:description" content="配達の売上・経費・稼働時間を記録して、時給・手残り・納税見込みを無料で見える化。入力内容はこの端末内だけに保存されます。" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://okumeter.com/" />
     <meta property="og:site_name" content="億メーター" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:image" content="https://okumeter.com/og-image.png" />
+    <meta property="og:image:secure_url" content="https://okumeter.com/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1730" />
+    <meta property="og:image:height" content="909" />
+    <meta property="og:image:alt" content="億メーター — 配達の売上・経費・税金を見える化" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="フードデリバリー配達員の売上・経費・税金管理 | 億メーター" />
+    <meta name="twitter:description" content="配達の売上・経費・稼働時間を記録して、時給・手残り・納税見込みを無料で見える化。" />
+    <meta name="twitter:image" content="https://okumeter.com/og-image.png" />
+    <meta name="twitter:image:alt" content="億メーター — 配達の売上・経費・税金を見える化" />
     <link rel="canonical" href="https://okumeter.com/" />
-    <title>億メーター | 配達収益管理</title>
-    <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="icon" href="app-icon.png" type="image/png" />
-    <link rel="apple-touch-icon" href="app-icon.png" />
-    <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="x-theme.css" />
+    <link rel="sitemap" type="application/xml" href="https://okumeter.com/sitemap.xml" />
+    <title>フードデリバリー配達員の売上・経費・税金管理 | 億メーター</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/brand-mark.svg" type="image/svg+xml" sizes="any" />
+    <link rel="apple-touch-icon" href="/app-icon.png" />
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/x-theme.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://okumeter.com/#website",
+            "url": "https://okumeter.com/",
+            "name": "億メーター",
+            "inLanguage": "ja"
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://okumeter.com/#app",
+            "name": "億メーター",
+            "url": "https://okumeter.com/",
+            "image": "https://okumeter.com/app-icon.png",
+            "description": "フードデリバリー配達員向けに売上・経費・稼働時間を記録し、税額を概算するWebアプリ。",
+            "applicationCategory": "FinanceApplication",
+            "applicationSubCategory": "BusinessApplication",
+            "operatingSystem": "Web",
+            "browserRequirements": "JavaScript対応の最新Webブラウザー",
+            "inLanguage": "ja",
+            "isAccessibleForFree": true,
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "JPY"
+            },
+            "featureList": [
+              "複数の配達プラットフォームの売上記録",
+              "経費・稼働時間・走行距離の管理",
+              "時給・1件単価・1km単価の集計",
+              "専業・副業別の税額概算",
+              "端末内保存とバックアップ"
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <img class="brand-mark" src="app-icon.png" width="38" height="38" alt="" />
+          <img class="brand-mark" src="/brand-mark.svg" width="38" height="38" alt="" />
           <span class="brand-text">
             <h1>億メーター</h1>
             <small>配達の記録と税金の見通し</small>
@@ -792,6 +847,38 @@
             <button class="guide-link-button" id="openWelcomeGuide" type="button">ホーム画面への追加・保存方法を見る</button>
           </section>
         </section>
+
+        <section class="product-discovery" aria-labelledby="productDiscoveryTitle">
+          <div class="product-discovery-heading">
+            <span>無料・会員登録不要</span>
+            <h2 id="productDiscoveryTitle">フードデリバリーの売上・経費・税金を、ひとつの画面で</h2>
+            <p>Uber Eats、出前館、Wolt、Rocket Nowなどの配達記録を日ごとにまとめ、売上だけでは見えにくい手残りと働き方を確認できます。</p>
+          </div>
+          <div class="product-feature-grid">
+            <article>
+              <span aria-hidden="true">01</span>
+              <h3>本当の時給を把握</h3>
+              <p>配達件数、売上、稼働時間、休憩を記録し、1件単価と時間帯別の傾向を自動集計します。</p>
+              <button type="button" data-open-screen="input">今日の配達を記録する</button>
+            </article>
+            <article>
+              <span aria-hidden="true">02</span>
+              <h3>ガソリン代まで反映</h3>
+              <p>給油やメンテナンスなどの経費と走行距離を残し、利益や売上1km単価を見える化します。</p>
+              <button type="button" data-open-screen="summary">集計を見る</button>
+            </article>
+            <article>
+              <span aria-hidden="true">03</span>
+              <h3>納税の準備を早めに</h3>
+              <p>専業・会社員の副業を選び、年間の記録から所得税・住民税などの見込み額を概算できます。</p>
+              <button type="button" data-open-screen="tax">税額の目安を見る</button>
+            </article>
+          </div>
+          <div class="product-discovery-note">
+            <p><strong>入力内容はこの端末内だけに保存。</strong>クラウド同期はされません。税額は納税準備用の概算です。</p>
+            <button class="product-share-button" id="shareApp" type="button">億メーターを共有</button>
+          </div>
+        </section>
       </main>
 
       <div class="record-action-dock" id="recordActionDock" hidden>
@@ -801,7 +888,7 @@
         </div>
       </div>
 
-      <footer class="public-traffic" data-public-traffic aria-labelledby="publicTrafficTitle">
+      <footer class="public-traffic" data-public-traffic data-nosnippet aria-labelledby="publicTrafficTitle">
         <div class="public-traffic-copy">
           <span class="public-traffic-eyebrow">みんなの利用状況</span>
           <strong id="publicTrafficTitle">公開集計を読み込み中</strong>
@@ -973,7 +1060,7 @@
       <dialog class="welcome-dialog" id="welcomeDialog" aria-labelledby="welcomeTitle">
         <div class="welcome-card">
           <div class="welcome-visual" aria-hidden="true">
-            <img class="welcome-logo" src="app-icon.png" width="68" height="68" alt="" />
+            <img class="welcome-logo" src="/brand-mark.svg" width="68" height="68" alt="" />
             <span class="welcome-chart"><i></i><i></i><i></i><i></i></span>
           </div>
           <p class="welcome-eyebrow">資産1億円への道を見える化</p>

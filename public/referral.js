@@ -10,12 +10,14 @@
   const SOURCE_PATHS = Object.freeze({
     x: "/referral/x",
     instagram: "/referral/instagram",
+    share: "/referral/share",
   });
 
   function normalizedSource(value) {
     const source = String(value || "").trim().toLowerCase();
     if (["x", "x.com", "twitter", "twitter.com", "tweet"].includes(source)) return "x";
     if (["instagram", "instagram.com", "insta", "ig"].includes(source)) return "instagram";
+    if (["share", "app_share", "native_share"].includes(source)) return "share";
     return "";
   }
 

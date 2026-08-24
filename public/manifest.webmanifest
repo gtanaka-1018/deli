@@ -1,11 +1,13 @@
 {
   "name": "億メーター | 配達収益管理",
   "short_name": "億メーター",
-  "description": "配達の売上・経費・税金を記録し、資産1億円への道を見える化します。",
+  "description": "フードデリバリー配達員の売上・経費・稼働時間を記録し、税額の概算、手残り、資産1億円への道を見える化します。",
   "lang": "ja",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "categories": ["finance", "business", "productivity"],
   "background_color": "#f2f7f3",
   "theme_color": "#087f5b",
   "icons": [
@@ -14,6 +16,20 @@
       "sizes": "1254x1254",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "今日の配達を記録",
+      "short_name": "配達を記録",
+      "url": "/?screen=input",
+      "icons": [{ "src": "app-icon.png", "sizes": "1254x1254", "type": "image/png" }]
+    },
+    {
+      "name": "納税見込みを確認",
+      "short_name": "税額を確認",
+      "url": "/?screen=tax",
+      "icons": [{ "src": "app-icon.png", "sizes": "1254x1254", "type": "image/png" }]
     }
   ]
 }

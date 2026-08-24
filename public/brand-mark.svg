@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="background" x1="8" y1="7" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#087f5b" />
+      <stop offset="1" stop-color="#034c39" />
+    </linearGradient>
+    <linearGradient id="growth" x1="18" y1="41" x2="48" y2="17" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffdc53" />
+      <stop offset="1" stop-color="#ffb914" />
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#background)" />
+  <path d="M11 35a21 21 0 0 1 42 0" fill="none" stroke="#eafff1" stroke-linecap="round" stroke-width="5" />
+  <path d="M12 31a21 21 0 0 1 27-18" fill="none" stroke="#55ef80" stroke-linecap="round" stroke-width="5" />
+  <path d="M17 50v-6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v6M29 50V39a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v11M41 50V33a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v17" fill="#37df6b" stroke="#fff" stroke-linejoin="round" stroke-width="2.5" />
+  <path d="M18 40c10-2 19-8 27-19" fill="none" stroke="#fff" stroke-linecap="round" stroke-width="7" />
+  <path d="M18 40c10-2 19-8 27-19" fill="none" stroke="url(#growth)" stroke-linecap="round" stroke-width="4" />
+  <path d="m40 17 11-2-3 11Z" fill="url(#growth)" stroke="#fff" stroke-linejoin="round" stroke-width="2.5" />
+  <circle cx="18" cy="40" r="4" fill="#ffcb2e" stroke="#fff" stroke-width="2.5" />
+</svg>

@@ -1,7 +1,7 @@
 "use strict";
 
 const ANALYTICS_ENDPOINT = "https://api.vercel.com/v1/query/web-analytics/visits/count";
-const ANALYTICS_FILTER = "environment eq 'production' and (requestPath eq '/' or requestPath eq '/referral/x' or requestPath eq '/referral/instagram')";
+const ANALYTICS_FILTER = "environment eq 'production' and (requestPath eq '/' or requestPath eq '/referral/x' or requestPath eq '/referral/instagram' or requestPath eq '/referral/share')";
 
 function analyticsUrl(projectId, teamId = "") {
   const url = new URL(ANALYTICS_ENDPOINT);

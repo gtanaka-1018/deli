@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "test": "node --test tests/tax-calculator.test.js",
+    "test": "node --test",
     "test:e2e": "playwright test"
   },
   "devDependencies": {

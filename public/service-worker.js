@@ -1,4 +1,4 @@
-const CACHE_NAME = "okumeter-v22";
+const CACHE_NAME = "okumeter-v25";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -10,7 +10,7 @@ const APP_SHELL = [
   "/referral.js",
   "/ranking.js",
   "/manifest.webmanifest",
-  "/app-icon.png",
+  "/brand-mark.svg",
 ];
 
 self.addEventListener("install", (event) => {
@@ -39,11 +39,14 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put("/index.html", copy));
+          if (response.ok) {
+            const cacheKey = url.pathname === "/" ? "/index.html" : request;
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(cacheKey, copy));
+          }
           return response;
         })
-        .catch(() => caches.match("/index.html"))
+        .catch(async () => (await caches.match(request)) || caches.match("/index.html"))
     );
     return;
   }

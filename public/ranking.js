@@ -14,12 +14,22 @@
   let participation = null;
   let syncing = false;
   let automaticSyncTimer = 0;
+  let initializationStarted = false;
 
   const elements = {};
 
-  document.addEventListener("DOMContentLoaded", initialize);
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelector('[data-screen="ranking"]')?.addEventListener("click", initialize);
+    try {
+      if (new URL(window.location.href).searchParams.get("screen") === "ranking") initialize();
+    } catch {
+      // The ranking can still be opened from its navigation tab.
+    }
+  });
 
   async function initialize() {
+    if (initializationStarted) return;
+    initializationStarted = true;
     bindElements();
     bindEvents();
 

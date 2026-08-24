@@ -77,13 +77,15 @@ document.addEventListener("DOMContentLoaded", () => {
 async function startApp() {
   bindElements();
   await loadState();
-  await requestPersistentStorage();
   bindEvents();
+  applyRequestedScreen();
   state.selectedDate = todayString();
   fillFormForDate(state.selectedDate);
   render({ shouldPersist: false });
   registerServiceWorker();
   setupWelcomeGuide();
+  if ("requestIdleCallback" in window) window.requestIdleCallback(requestPersistentStorage, { timeout: 2000 });
+  else setTimeout(requestPersistentStorage, 0);
 }
 
 function registerServiceWorker() {
@@ -172,6 +174,7 @@ function bindElements() {
     "welcomeDialog",
     "welcomeStart",
     "welcomeClose",
+    "shareApp",
     "workHours",
     "workHoursOverrideHint",
     "breakHours",
@@ -342,6 +345,16 @@ function bindEvents() {
       if (currentScreen === "meter") window.scrollTo({ top: 0, behavior: "auto" });
     });
   });
+
+  document.querySelectorAll("[data-open-screen]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const tab = document.querySelector(`.screen-tab[data-screen="${button.dataset.openScreen}"]`);
+      if (!tab) return;
+      tab.click();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  });
+  els.shareApp.addEventListener("click", shareApp);
 
   document.querySelectorAll(".view-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
@@ -1631,6 +1644,52 @@ function renderSettings() {
   renderProviderSettings();
   renderVehicleSettings();
   renderBackupCare();
+}
+
+function applyRequestedScreen() {
+  try {
+    const requested = new URL(window.location.href).searchParams.get("screen");
+    if (document.querySelector(`.screen-tab[data-screen="${requested}"]`)) currentScreen = requested;
+  } catch {
+    // Invalid or unavailable URLs should not prevent the app from opening.
+  }
+}
+
+async function shareApp() {
+  const url = new URL("https://okumeter.com/");
+  url.searchParams.set("utm_source", "share");
+  url.searchParams.set("utm_medium", "referral");
+  const shareData = {
+    title: "億メーター",
+    text: "配達の売上・経費・稼働時間・税金を無料で見える化できる億メーター",
+    url: url.toString(),
+  };
+
+  if (typeof navigator.share === "function") {
+    try {
+      await navigator.share(shareData);
+      showToast("億メーターを共有しました");
+      return;
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(shareData.url);
+    showToast("共有用URLをコピーしました");
+  } catch {
+    const input = document.createElement("textarea");
+    input.value = shareData.url;
+    input.setAttribute("readonly", "");
+    input.style.position = "fixed";
+    input.style.opacity = "0";
+    document.body.appendChild(input);
+    input.select();
+    const copied = document.execCommand("copy");
+    input.remove();
+    showToast(copied ? "共有用URLをコピーしました" : "URLをコピーできませんでした");
+  }
 }
 
 function setupWelcomeGuide() {
