@@ -77,6 +77,49 @@
     </script>
   </head>
   <body>
+    <dialog class="welcome-dialog" id="welcomeDialog" aria-labelledby="welcomeTitle">
+      <div class="welcome-card">
+        <div class="welcome-visual" aria-hidden="true">
+          <img class="welcome-logo" src="/brand-mark.svg" width="68" height="68" alt="" />
+          <span class="welcome-chart"><i></i><i></i><i></i><i></i></span>
+        </div>
+        <p class="welcome-eyebrow">資産1億円への道を見える化</p>
+        <h2 id="welcomeTitle">配達の数字を、<br />迷わず管理。</h2>
+        <p class="welcome-lead">毎日の売上から納税見込みまで、スマホひとつで見通せます。</p>
+
+        <div class="welcome-points">
+          <article>
+            <span aria-hidden="true">＋</span>
+            <div><strong>まずは1日の記録から</strong><small>売上・時間・経費をまとめて保存</small></div>
+          </article>
+          <article>
+            <span aria-hidden="true">⌂</span>
+            <div><strong>ホーム画面に追加</strong><small>Safari・Chromeの共有メニューから追加できます</small></div>
+          </article>
+          <article>
+            <span aria-hidden="true">⇩</span>
+            <div><strong>記録はこの端末内</strong><small>月1回、設定からバックアップしてください</small></div>
+          </article>
+        </div>
+
+        <button class="welcome-start-button" id="welcomeStart" type="button">億メーターをはじめる</button>
+        <button class="welcome-close-button" id="welcomeClose" type="button">閉じる</button>
+        <p class="welcome-privacy">会員登録不要・入力した売上や経費の記録は外部へ送信しません</p>
+      </div>
+    </dialog>
+
+    <script>
+      (() => {
+        try {
+          if (localStorage.getItem("deli-onboarding-complete-v1") === "done") return;
+        } catch {
+          // Storage may be unavailable in privacy-restricted browsers.
+        }
+        document.getElementById("welcomeClose").hidden = true;
+        document.getElementById("welcomeDialog").showModal();
+      })();
+    </script>
+
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
@@ -1057,45 +1100,13 @@
         </form>
       </dialog>
 
-      <dialog class="welcome-dialog" id="welcomeDialog" aria-labelledby="welcomeTitle">
-        <div class="welcome-card">
-          <div class="welcome-visual" aria-hidden="true">
-            <img class="welcome-logo" src="/brand-mark.svg" width="68" height="68" alt="" />
-            <span class="welcome-chart"><i></i><i></i><i></i><i></i></span>
-          </div>
-          <p class="welcome-eyebrow">資産1億円への道を見える化</p>
-          <h2 id="welcomeTitle">配達の数字を、<br />迷わず管理。</h2>
-          <p class="welcome-lead">毎日の売上から納税見込みまで、スマホひとつで見通せます。</p>
-
-          <div class="welcome-points">
-            <article>
-              <span aria-hidden="true">＋</span>
-              <div><strong>まずは1日の記録から</strong><small>売上・時間・経費をまとめて保存</small></div>
-            </article>
-            <article>
-              <span aria-hidden="true">⌂</span>
-              <div><strong>ホーム画面に追加</strong><small>Safari・Chromeの共有メニューから追加できます</small></div>
-            </article>
-            <article>
-              <span aria-hidden="true">⇩</span>
-              <div><strong>記録はこの端末内</strong><small>月1回、設定からバックアップしてください</small></div>
-            </article>
-          </div>
-
-          <button class="welcome-start-button" id="welcomeStart" type="button">億メーターをはじめる</button>
-          <button class="welcome-close-button" id="welcomeClose" type="button">閉じる</button>
-          <p class="welcome-privacy">会員登録不要・入力した売上や経費の記録は外部へ送信しません</p>
-        </div>
-      </dialog>
-
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
     </div>
-
-    <script src="tax-calculator.js"></script>
-    <script src="app.js"></script>
-    <script src="traffic.js"></script>
-    <script src="ranking.js"></script>
-    <script src="referral.js"></script>
+    <script defer src="/tax-calculator.js"></script>
+    <script defer src="/app.js"></script>
+    <script defer src="/traffic.js"></script>
+    <script defer src="/ranking.js"></script>
+    <script defer src="/referral.js"></script>
     <script defer src="/_vercel/insights/script.js"></script>
   </body>
 </html>
