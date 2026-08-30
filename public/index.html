@@ -168,33 +168,45 @@
 
       <main class="workspace">
         <section class="app-screen active" id="inputScreen" data-screen-panel="input">
-          <div class="period-host" id="inputPeriodHost">
-            <section class="control-strip" id="periodControls" aria-label="対象期間を選択">
-              <div class="date-controls">
-                <button class="icon-button" id="prevPeriod" type="button" title="前へ" aria-label="前へ">‹</button>
-                <div class="period-center">
-                  <input id="selectedDate" type="date" aria-label="対象日" hidden />
-                  <div class="week-picker-control" id="selectedWeekControl" hidden>
-                    <span id="selectedWeekRange" aria-hidden="true">-</span>
-                    <span class="calendar-mark" aria-hidden="true"></span>
-                    <input id="selectedWeek" type="week" aria-label="対象週" />
+          <section class="input-calendar-panel" id="inputCalendarPanel" aria-label="入力日カレンダー">
+            <div class="period-host" id="inputPeriodHost">
+              <section class="control-strip" id="periodControls" aria-label="対象期間を選択">
+                <div class="date-controls">
+                  <button class="icon-button" id="prevPeriod" type="button" title="前へ" aria-label="前へ">‹</button>
+                  <div class="period-center">
+                    <input id="selectedDate" type="date" aria-label="対象日" hidden />
+                    <div class="week-picker-control" id="selectedWeekControl" hidden>
+                      <span id="selectedWeekRange" aria-hidden="true">-</span>
+                      <span class="calendar-mark" aria-hidden="true"></span>
+                      <input id="selectedWeek" type="week" aria-label="対象週" />
+                    </div>
+                    <input id="selectedMonth" type="month" aria-label="対象月" hidden />
+                    <select id="selectedYear" aria-label="対象年" hidden></select>
+                    <button class="period-picker-button" id="periodPickerButton" type="button" aria-haspopup="dialog" aria-controls="periodPickerDialog">
+                      <span id="periodPickerValue">期間を選択</span>
+                      <span class="calendar-mark" aria-hidden="true"></span>
+                    </button>
+                    <p id="periodLabel">-</p>
                   </div>
-                  <input id="selectedMonth" type="month" aria-label="対象月" hidden />
-                  <select id="selectedYear" aria-label="対象年" hidden></select>
-                  <button class="period-picker-button" id="periodPickerButton" type="button" aria-haspopup="dialog" aria-controls="periodPickerDialog">
-                    <span id="periodPickerValue">期間を選択</span>
-                    <span class="calendar-mark" aria-hidden="true"></span>
-                  </button>
-                  <p id="periodLabel">-</p>
+                  <button class="icon-button" id="nextPeriod" type="button" title="次へ" aria-label="次へ">›</button>
                 </div>
-                <button class="icon-button" id="nextPeriod" type="button" title="次へ" aria-label="次へ">›</button>
-              </div>
-            </section>
-          </div>
+              </section>
+            </div>
+            <div class="input-month-summary" aria-label="表示月の集計">
+              <div><span>売上</span><strong id="calendarMonthSales">¥0</strong></div>
+              <div><span>件数</span><strong id="calendarMonthCount">0件</strong></div>
+              <div><span>稼働</span><strong id="calendarMonthHours">0h</strong></div>
+            </div>
+            <div class="input-calendar-weekdays" aria-hidden="true">
+              <span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span><span>日</span>
+            </div>
+            <div class="input-calendar-grid" id="inputCalendarGrid" role="grid" aria-label="日付を選んで配達記録を入力"></div>
+          </section>
           <section class="panel input-panel" id="dayPanel">
             <div class="panel-heading input-heading">
               <div>
-                <h2>配達記録</h2>
+                <h2 id="inputDayHeading">配達記録</h2>
+                <p id="inputDayCaption">日付を選んで入力</p>
               </div>
             </div>
 
@@ -202,6 +214,14 @@
               <div>
                 <span>総売上</span>
                 <strong id="dailySales">¥0</strong>
+              </div>
+              <div>
+                <span>件数</span>
+                <strong id="dailyCount">0件</strong>
+              </div>
+              <div>
+                <span>1件単価</span>
+                <strong id="dailyUnitPrice">-</strong>
               </div>
               <div>
                 <span>利益</span>

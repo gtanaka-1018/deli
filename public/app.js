@@ -119,6 +119,12 @@ function bindElements() {
     "periodPickerOptions",
     "prevPeriod",
     "nextPeriod",
+    "inputCalendarGrid",
+    "calendarMonthSales",
+    "calendarMonthCount",
+    "calendarMonthHours",
+    "inputDayHeading",
+    "inputDayCaption",
     "metricSales",
     "metricProfit",
     "metricHourly",
@@ -152,6 +158,8 @@ function bindElements() {
     "planForecast",
     "planNeededCount",
     "dailySales",
+    "dailyCount",
+    "dailyUnitPrice",
     "dailyProfit",
     "dailyExpense",
     "dailyWorkHours",
@@ -372,6 +380,10 @@ function bindEvents() {
   els.dayReport.addEventListener("click", (event) => {
     const button = event.target.closest("[data-jump-date]");
     if (button) jumpToInputDate(button.dataset.jumpDate);
+  });
+  els.inputCalendarGrid.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-input-date]");
+    if (button) changeSelectedPeriod(button.dataset.inputDate);
   });
 
   els.prevPeriod.addEventListener("click", () => movePeriod(-1));
@@ -1518,6 +1530,7 @@ function setSaveStatus(message, status) {
   els.saveDockStatus.textContent = message;
   els.saveDockStatus.className = `save-status ${status}`;
   els.recordActionDock.hidden = status === "saved";
+  renderInputDayHeading(status);
 }
 
 function confirmDiscardDraft(message = "未保存の入力があります。破棄して日付を移動しますか？") {
@@ -2104,7 +2117,12 @@ function selectPeriodFromPicker(event) {
 }
 
 function periodPickerDisplayValue(type) {
-  if (type === "day") return formatDate(state.selectedDate);
+  if (type === "day") {
+    if (currentScreen === "input") {
+      return `${state.selectedDate.slice(0, 4)}年${Number(state.selectedDate.slice(5, 7))}月`;
+    }
+    return formatDate(state.selectedDate);
+  }
   if (type === "week") {
     const range = weekRange(state.selectedDate);
     return shortDateRange(range.start, range.end);
@@ -2152,7 +2170,7 @@ function renderPeriodControls() {
   els.selectedWeekControl.hidden = true;
   els.selectedMonth.hidden = true;
   els.selectedYear.hidden = true;
-  els.periodLabel.hidden = true;
+  els.periodLabel.hidden = currentScreen !== "input";
   els.selectedDate.value = state.selectedDate;
   els.selectedWeek.value = weekInputValue(state.selectedDate);
   const selectedWeekRange = weekRange(state.selectedDate);
@@ -2162,7 +2180,20 @@ function renderPeriodControls() {
   els.selectedYear.value = state.selectedDate.slice(0, 4);
   const pickerValue = periodPickerDisplayValue(type);
   els.periodPickerValue.textContent = pickerValue;
-  els.periodPickerButton.setAttribute("aria-label", `${pickerValue}。${{ day: "日付", week: "週", month: "月", year: "年" }[type]}を選択`);
+  const pickerTypeLabel = currentScreen === "input" ? "日付" : { day: "日付", week: "週", month: "月", year: "年" }[type];
+  els.periodPickerButton.setAttribute("aria-label", `${pickerValue}。${pickerTypeLabel}を選択`);
+  if (currentScreen === "input") {
+    els.periodLabel.textContent = `${Number(state.selectedDate.slice(8, 10))}日（${weekdayLabel(state.selectedDate)}）を選択中`;
+    els.prevPeriod.setAttribute("aria-label", "前の月");
+    els.prevPeriod.title = "前の月";
+    els.nextPeriod.setAttribute("aria-label", "次の月");
+    els.nextPeriod.title = "次の月";
+  } else {
+    els.prevPeriod.setAttribute("aria-label", "前へ");
+    els.prevPeriod.title = "前へ";
+    els.nextPeriod.setAttribute("aria-label", "次へ");
+    els.nextPeriod.title = "次へ";
+  }
   els.loadToday.textContent = {
     day: "今日へ戻る",
     week: "今週へ戻る",
@@ -2184,6 +2215,8 @@ function renderDailyPreview() {
   const record = readFormRecord();
   const total = summarizeRecords([record]);
   els.dailySales.textContent = yen(total.sales);
+  els.dailyCount.textContent = `${formatNumber(total.count)}件`;
+  els.dailyUnitPrice.textContent = total.count > 0 ? `${yen(total.sales / total.count)}/件` : "-";
   els.dailyProfit.textContent = yen(total.profit);
   els.dailyExpense.textContent = yen(total.expense);
   els.dailyExpense.parentElement.hidden = total.expense <= 0;
@@ -2193,6 +2226,100 @@ function renderDailyPreview() {
   els.dailyGasUnit.parentElement.hidden = total.gasUnit <= 0;
   els.dailyKmUnit.textContent = total.kmUnit > 0 ? `${yen(total.kmUnit)}/km` : "-";
   renderOdometerHint(record);
+  if (currentScreen === "input") renderInputCalendar(record);
+}
+
+function renderInputDayHeading(status = formDirty ? "dirty" : "saved") {
+  if (!els.inputDayHeading || currentScreen !== "input") return;
+  const date = new Date(`${state.selectedDate}T00:00:00`);
+  els.inputDayHeading.textContent = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日（${weekdayLabel(state.selectedDate)}）`;
+  const messages = {
+    dirty: "編集中・保存するとカレンダーへ反映",
+    saving: "この端末内へ保存中…",
+    error: "保存できませんでした",
+  };
+  els.inputDayCaption.textContent = messages[status]
+    || (state.records[state.selectedDate] ? "保存済みの配達記録" : "未入力・下の項目から記録できます");
+}
+
+function renderInputCalendar(draftRecord = null) {
+  if (!els.inputCalendarGrid || currentScreen !== "input") return;
+  const [year, monthNumber] = state.selectedDate.slice(0, 7).split("-").map(Number);
+  const month = monthNumber - 1;
+  const key = `${year}-${String(monthNumber).padStart(2, "0")}`;
+  const leadingDays = (new Date(year, month, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const selectedDraft = draftRecord && monthKey(draftRecord.date) === key ? normalizeRecord(draftRecord) : null;
+  const monthRecords = recordsInMonth(key)
+    .filter((record) => record.date !== selectedDraft?.date);
+  if (selectedDraft) monthRecords.push(selectedDraft);
+  const monthSummary = summarizeRecords(monthRecords);
+  els.calendarMonthSales.textContent = yen(monthSummary.sales);
+  els.calendarMonthCount.textContent = `${formatNumber(monthSummary.count)}件`;
+  els.calendarMonthHours.textContent = formatDuration(monthSummary.workHours);
+
+  const cells = [];
+  for (let index = 0; index < 42; index += 1) {
+    const day = index - leadingDays + 1;
+    if (day < 1 || day > daysInMonth) {
+      cells.push('<span class="input-calendar-spacer" aria-hidden="true"></span>');
+      continue;
+    }
+    const date = toDateInput(new Date(year, month, day));
+    const source = date === selectedDraft?.date
+      ? selectedDraft
+      : normalizeRecord({ ...(isPlainObject(state.records[date]) ? state.records[date] : {}), date });
+    const summary = summarizeRecords([source]);
+    const hasActivity = summary.sales > 0 || summary.count > 0 || summary.workHours > 0 || summary.expense > 0;
+    const dayOfWeek = new Date(`${date}T00:00:00`).getDay();
+    const weather = weatherMark(source.sourceData?.weather);
+    const isSelected = date === state.selectedDate;
+    const isToday = date === todayString();
+    const classes = [
+      "input-calendar-day",
+      dayOfWeek === 0 ? "is-sunday" : "",
+      dayOfWeek === 6 ? "is-saturday" : "",
+      isSelected ? "is-selected" : "",
+      isToday ? "is-today" : "",
+      hasActivity ? "has-activity" : "",
+    ].filter(Boolean).join(" ");
+    const details = hasActivity
+      ? `<span class="input-calendar-count">${formatNumber(summary.count)}件</span><strong>${formatCalendarAmount(summary.sales)}</strong>`
+      : '<span class="input-calendar-add" aria-hidden="true">＋</span>';
+    const ariaDetails = hasActivity
+      ? `、${formatNumber(summary.count)}件、売上${yen(summary.sales)}`
+      : "、未入力";
+    cells.push(`
+      <button class="${classes}" type="button" role="gridcell" data-input-date="${date}" aria-label="${year}年${monthNumber}月${day}日（${weekdayLabel(date)}）${ariaDetails}"${isSelected ? ' aria-current="date"' : ""}>
+        <span class="input-calendar-date">${day}</span>
+        ${weather ? `<span class="input-calendar-weather" aria-hidden="true">${weather}</span>` : ""}
+        ${details}
+      </button>
+    `);
+  }
+  els.inputCalendarGrid.innerHTML = cells.join("");
+  renderInputDayHeading();
+}
+
+function weatherMark(value) {
+  const weather = typeof value === "string" ? value : "";
+  if (/雪/.test(weather)) return "❄";
+  if (/雷/.test(weather)) return "⚡";
+  if (/雨|小雨|豪雨/.test(weather)) return "☂";
+  if (/曇|くもり/.test(weather)) return "☁";
+  if (/晴/.test(weather)) return "☀";
+  return "";
+}
+
+function formatCalendarAmount(value) {
+  return new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 0 }).format(numberValue(value));
+}
+
+function formatDuration(hours) {
+  const totalMinutes = Math.round(numberValue(hours) * 60);
+  const wholeHours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return minutes > 0 ? `${wholeHours}h${minutes}m` : `${wholeHours}h`;
 }
 
 function renderCurrentMetrics() {
@@ -2929,7 +3056,8 @@ function movePeriod(direction) {
   if (!confirmDiscardDraft()) return;
   const date = new Date(`${state.selectedDate}T00:00:00`);
   const period = currentScreen === "input" ? "day" : currentScreen === "plan" ? "month" : state.view;
-  if (period === "day") date.setDate(date.getDate() + direction);
+  if (period === "day" && currentScreen === "input") shiftCalendarMonth(date, direction);
+  else if (period === "day") date.setDate(date.getDate() + direction);
   if (period === "week") date.setDate(date.getDate() + direction * 7);
   if (period === "month") shiftCalendarMonth(date, direction);
   if (period === "year") shiftCalendarYear(date, direction);
@@ -2971,7 +3099,9 @@ function moveReportTabFocus(event) {
 }
 
 function periodLabel() {
-  if (currentScreen === "input") return formatDate(state.selectedDate);
+  if (currentScreen === "input") {
+    return `${Number(state.selectedDate.slice(8, 10))}日（${weekdayLabel(state.selectedDate)}）を選択中`;
+  }
   if (currentScreen === "plan") return monthKey(state.selectedDate).replace("-", "年") + "月";
   if (state.view === "day") return formatDate(state.selectedDate);
   if (state.view === "week") {

@@ -39,7 +39,7 @@ test("日・週・月・年を選択したタップだけで即時反映する",
   await picker.locator('[data-period-date="2026-08-10"]').click();
   await expect(picker).toBeHidden();
   await expect(page.locator("#selectedDate")).toHaveValue("2026-08-10");
-  await expect(page.locator("#periodPickerValue")).toHaveText("2026/8/10");
+  await expect(page.locator("#periodPickerValue")).toHaveText("2026年8月");
 
   await page.locator('[data-screen="summary"]').click();
   await page.waitForTimeout(250);
