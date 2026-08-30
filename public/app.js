@@ -2152,7 +2152,7 @@ function jumpToInputDate(date) {
 }
 
 function activePeriodType() {
-  if (currentScreen === "input") return "day";
+  if (currentScreen === "input") return "month";
   if (currentScreen === "plan") return "month";
   return state.view;
 }
@@ -2180,7 +2180,7 @@ function renderPeriodControls() {
   els.selectedYear.value = state.selectedDate.slice(0, 4);
   const pickerValue = periodPickerDisplayValue(type);
   els.periodPickerValue.textContent = pickerValue;
-  const pickerTypeLabel = currentScreen === "input" ? "日付" : { day: "日付", week: "週", month: "月", year: "年" }[type];
+  const pickerTypeLabel = { day: "日付", week: "週", month: "月", year: "年" }[type];
   els.periodPickerButton.setAttribute("aria-label", `${pickerValue}。${pickerTypeLabel}を選択`);
   if (currentScreen === "input") {
     els.periodLabel.textContent = `${Number(state.selectedDate.slice(8, 10))}日（${weekdayLabel(state.selectedDate)}）を選択中`;

@@ -62,7 +62,7 @@ test("IndexNow所有確認キーはファイル名と内容が一致する", () 
 
 test("Service Workerは別ページの応答でアプリ本体を上書きしない", () => {
   const worker = fs.readFileSync(publicPath("service-worker.js"), "utf8");
-  assert.match(worker, /const CACHE_NAME = "okumeter-v26"/);
+  assert.match(worker, /const CACHE_NAME = "okumeter-v27"/);
   assert.doesNotMatch(worker, /"\/app-icon\.png"/);
   assert.match(worker, /url\.pathname === "\/" \? "\/index\.html" : request/);
   assert.doesNotMatch(worker, /cache\.put\("\/index\.html", copy\)/);

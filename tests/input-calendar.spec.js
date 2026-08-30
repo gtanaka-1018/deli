@@ -57,6 +57,12 @@ test("iPhone 15 Pro Maxで月間実績を見ながら入力日を選べる", asy
   await expect(page.locator(`[data-input-date="${firstDate}"] strong`)).toHaveText("6,500");
   await expect(page.locator(`[data-input-date="${firstDate}"] .input-calendar-weather`)).toHaveText("☀");
 
+  await page.locator("#periodPickerButton").click();
+  await expect(page.locator("#periodPickerDialog")).toHaveAttribute("data-type", "month");
+  await expect(page.locator("#periodPickerOptions .period-month-grid [data-period-date]")).toHaveCount(12);
+  await page.locator(`#periodPickerOptions [data-period-date="${dateKey(year, month, 1)}"]`).click();
+  await expect(page.locator("#selectedDate")).toHaveValue(dateKey(year, month, 1));
+
   await page.locator(`[data-input-date="${secondDate}"]`).click();
   await expect(page.locator("#selectedDate")).toHaveValue(secondDate);
   await expect(page.locator(`[data-input-date="${secondDate}"]`)).toHaveAttribute("aria-current", "date");
