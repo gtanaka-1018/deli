@@ -144,8 +144,9 @@
 
     elements.login.disabled = true;
     setStatus("ログインリンクを送信しています…");
-    const redirectUrl = new URL(window.location.href);
-    redirectUrl.hash = "";
+    // 現在のURLから作ると、共有リンクのutmなどが残って許可リストの
+    // 完全一致から外れる。常に同じ1本になるようオリジンから組み立てる。
+    const redirectUrl = new URL(window.location.origin);
     redirectUrl.searchParams.set("screen", "ranking");
 
     const { error } = await client.auth.signInWithOtp({

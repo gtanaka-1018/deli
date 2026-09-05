@@ -5,6 +5,7 @@ site_url = "https://okumeter.com"
 additional_redirect_urls = [
   "https://okumeter.com/?screen=ranking",
   "https://delilog.vercel.app/?screen=ranking",
+  "https://okumeter.com/?screen=settings",
 ]
 
 [auth.email]

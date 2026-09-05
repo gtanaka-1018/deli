@@ -1594,7 +1594,7 @@ body {
   margin-top: 16px;
   padding: 20px;
   border-radius: 16px;
-  background: linear-gradient(135deg, var(--accent-solid), var(--violet, var(--green)));
+  background: linear-gradient(135deg, var(--accent-solid), var(--violet-solid, var(--green)));
   color: var(--on-accent);
   box-shadow: 0 14px 30px color-mix(in srgb, var(--blue) 22%, transparent);
 }

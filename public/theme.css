@@ -48,6 +48,7 @@
   --blue: #1d9bf0;
   --blue-soft: #e8f5fe;
   --violet: #7856ff;
+  --violet-solid: #5b39d6;
   --violet-soft: #eee9ff;
   --cyan: #1d9bf0;
   --cyan-soft: #e8f5fe;
@@ -134,6 +135,7 @@
     --blue: #1d9bf0;
     --blue-soft: rgba(29, 155, 240, 0.16);
     --violet: #9c84ff;
+    --violet-solid: #5b39d6;
     --violet-soft: rgba(120, 86, 255, 0.2);
     --cyan: #1d9bf0;
     --cyan-soft: rgba(29, 155, 240, 0.16);
@@ -212,6 +214,7 @@
   --blue: #1d9bf0;
   --blue-soft: rgba(29, 155, 240, 0.16);
   --violet: #9c84ff;
+  --violet-solid: #5b39d6;
   --violet-soft: rgba(120, 86, 255, 0.2);
   --cyan: #1d9bf0;
   --cyan-soft: rgba(29, 155, 240, 0.16);
