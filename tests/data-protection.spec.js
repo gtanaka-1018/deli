@@ -208,3 +208,28 @@ test("クラウド同期は未設定なら準備中と表示し、記録を送�
   await expect(page.locator("#cloudSyncLoginForm")).toBeHidden();
   expect(requests.some((url) => url.includes("supabase.co"))).toBeFalsy();
 });
+
+test("ログインリンクから戻ると、操作なしでクラウド同期が動き出す", async ({ page }) => {
+  const requested = [];
+  page.on("request", (outgoing) => requested.push(outgoing.url()));
+
+  await seed(page);
+  await page.route("**/api/ranking-config", (route) => route.fulfill({
+    status: 503,
+    contentType: "application/json",
+    body: JSON.stringify({ available: false }),
+  }));
+
+  // 通常のアクセスでは、クラウドへ問い合わせない。
+  await page.goto(APP_URL, { waitUntil: "networkidle" });
+  expect(requested.some((url) => url.includes("/api/ranking-config"))).toBeFalsy();
+
+  // ログインリンクの戻り先では、タブを押さなくても初期化する。
+  // ここで初期化しないと、URLに載った認証コードが交換されずログインが完了しない。
+  requested.length = 0;
+  await page.goto(`${APP_URL}/?screen=settings`, { waitUntil: "networkidle" });
+  await expect.poll(
+    () => requested.some((url) => url.includes("/api/ranking-config")),
+    { timeout: 10000 }
+  ).toBe(true);
+});

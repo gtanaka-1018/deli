@@ -30,10 +30,28 @@
     bindElements();
     bindEvents();
     renderAccount();
-    // ログインしたことがある端末だけがクラウドへ問い合わせる。
-    // 未ログインの利用者はSDKも設定APIも読み込まない。
-    if (settings.enabled) start().catch(() => {});
+    // ログインしたことがある端末と、ログインリンクから戻ってきた場合だけ
+    // クラウドへ問い合わせる。未ログインの利用者はSDKも設定APIも読み込まない。
+    if (settings.enabled || returningFromLoginLink()) start().catch(() => {});
   });
+
+  /**
+   * メールのログインリンクから戻ってきたかを判定する。
+   * ここで start() を呼ばないと、URLに載った認証コードが交換されず、
+   * リンクを開いてもログインが完了しないまま終わる。
+   */
+  function returningFromLoginLink() {
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("screen") === "settings") return true;
+      // PKCEは code、旧来のリンクは URL断片に access_token を載せてくる。
+      if (url.searchParams.has("code")) return true;
+      if (url.searchParams.has("error_description")) return true;
+      return /access_token=|error=/.test(url.hash);
+    } catch {
+      return false;
+    }
+  }
 
   function bindElements() {
     const ids = {
