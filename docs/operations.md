@@ -50,10 +50,12 @@
 
 ### Supabase設定
 
-1. SQL Editorで [`docs/sync-schema.sql`](sync-schema.sql) を実行する。ランキング用スキーマとは別に、機微データ用の `app_private` スキーマを作る。
+1. SQL Editorで [`docs/sync-schema.sql`](sync-schema.sql) を実行する。ランキング用スキーマとは別に、機微データ用の `app_private` スキーマを作る。スクリプトは冪等なので、失敗しても最初から流し直せる。
 2. `app_private` は PostgREST の Exposed schemas に**含めない**。読み書きは `public` に置いた security invoker のRPCだけを通す。
 3. AuthenticationのRedirect URLsへ `https://okumeter.com/?screen=settings` を追加する。
 4. 環境変数はランキングと共用（`SUPABASE_URL`、`SUPABASE_PUBLISHABLE_KEY`）。追加設定は不要。
+
+`docs/sync-schema.sql` は `tests/sync-schema.test.js` が実際のPostgreSQL（WASM版のPGlite）へ適用して検証する。スキーマを変更したら `node --test tests\sync-schema.test.js` を実行し、権限・競合検出・行レベルの分離が壊れていないことを確かめてから本番へ流す。
 
 Supabase JavaScript SDKは `public/vendor/supabase-js-<版数>.js` として同梱している。第三者CDNへ実行時に依存せず、オフラインでも動く。更新するときはファイルを差し替え、`public/supabase-client.js` の `SDK_URL` と `tests/ranking.spec.js` の差し替え対象を合わせる。
 

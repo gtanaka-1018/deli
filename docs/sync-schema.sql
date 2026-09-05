@@ -259,6 +259,9 @@ language plpgsql
 security invoker
 set search_path = ''
 as $$
+-- 出力列 revision と表の列 revision が同名のため、あいまいな参照は列として解決する。
+-- 変数は v_ / p_ を前置しており、この設定で意図が変わる箇所はない。
+#variable_conflict use_column
 declare
   v_user_id uuid := (select auth.uid());
   v_current app_private.sync_snapshots%rowtype;
