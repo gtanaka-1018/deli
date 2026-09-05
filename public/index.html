@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#087f5b" />
+    <meta name="theme-color" content="#ffffff" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="億メーター" />
@@ -33,8 +33,22 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/brand-mark.svg" type="image/svg+xml" sizes="any" />
     <link rel="apple-touch-icon" href="/app-icon.png" />
+    <link rel="stylesheet" href="/theme.css" />
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/x-theme.css" />
+    <script>
+      // 保存済みのテーマを描画前に反映し、切り替え時のちらつきを防ぐ。
+      (() => {
+        try {
+          const theme = localStorage.getItem("deli-theme-v1");
+          if (theme === "dark" || theme === "light") {
+            document.documentElement.dataset.theme = theme;
+          }
+        } catch {
+          // Storage may be unavailable in privacy-restricted browsers.
+        }
+      })();
+    </script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -69,7 +83,7 @@
               "経費・稼働時間・走行距離の管理",
               "時給・1件単価・1km単価の集計",
               "専業・副業別の税額概算",
-              "端末内保存とバックアップ"
+              "端末内保存・ファイルバックアップ・任意のクラウド同期"
             ]
           }
         ]
@@ -98,7 +112,7 @@
           </article>
           <article>
             <span aria-hidden="true">⇩</span>
-            <div><strong>記録はこの端末内</strong><small>月1回、設定からバックアップしてください</small></div>
+            <div><strong>記録はこの端末内</strong><small>設定からファイル保存とクラウド同期を選べます</small></div>
           </article>
         </div>
 
@@ -869,6 +883,25 @@
               </div>
             </div>
 
+            <section class="settings-section" aria-labelledby="themeSettingsTitle">
+              <div class="settings-section-heading">
+                <div>
+                  <h3 id="themeSettingsTitle">表示テーマ</h3>
+                </div>
+              </div>
+              <div class="theme-choice" role="radiogroup" aria-labelledby="themeSettingsTitle">
+                <button class="theme-choice-option" type="button" role="radio" aria-checked="true" data-theme-choice="system">
+                  <span aria-hidden="true">◐</span>端末に合わせる
+                </button>
+                <button class="theme-choice-option" type="button" role="radio" aria-checked="false" data-theme-choice="light">
+                  <span aria-hidden="true">☀</span>ライト
+                </button>
+                <button class="theme-choice-option" type="button" role="radio" aria-checked="false" data-theme-choice="dark">
+                  <span aria-hidden="true">☾</span>ダーク
+                </button>
+              </div>
+            </section>
+
             <section class="settings-section" aria-labelledby="providerSettingsTitle">
               <div class="settings-section-heading">
                 <div>
@@ -890,6 +923,58 @@
             </section>
           </section>
 
+          <section class="panel data-management cloud-sync-panel" aria-labelledby="cloudSyncTitle">
+            <div class="panel-heading">
+              <div>
+                <h2 id="cloudSyncTitle">クラウド同期・バックアップ</h2>
+                <p class="cloud-sync-lead">ログインすると、記録をクラウドへ保存してスマートフォンとPCで同じ内容を使えます。既定では停止していて、この端末の記録は勝手に送信されません。</p>
+              </div>
+            </div>
+
+            <p class="cloud-sync-unavailable" id="cloudSyncUnavailable" hidden>クラウド同期はまだ準備中です。この端末内の保存とファイル保存はこれまで通り使えます。</p>
+
+            <form class="cloud-sync-login" id="cloudSyncLoginForm" hidden>
+              <label for="cloudSyncEmail">
+                メールアドレス
+                <input id="cloudSyncEmail" type="email" autocomplete="email" required placeholder="you@example.com" />
+              </label>
+              <button class="text-button primary" id="cloudSyncLogin" type="submit">ログインリンクを送る</button>
+              <p class="field-note">パスワードは使いません。届いたメールのリンクを、同じ端末の同じブラウザーで開いてください。</p>
+            </form>
+
+            <div class="cloud-sync-account" id="cloudSyncAccount" hidden>
+              <div class="cloud-sync-account-row">
+                <span>ログイン中</span>
+                <strong id="cloudSyncEmailLabel">-</strong>
+              </div>
+              <label class="cloud-sync-toggle">
+                <input id="cloudSyncEnabled" type="checkbox" />
+                <span>この端末の記録をクラウドと同期する</span>
+              </label>
+              <div class="cloud-sync-actions">
+                <button class="text-button primary" id="cloudSyncNow" type="button">今すぐ同期</button>
+                <button class="text-button muted" id="cloudSyncLogout" type="button">ログアウト</button>
+              </div>
+            </div>
+
+            <p class="cloud-sync-status" id="cloudSyncStatus" role="status">-</p>
+
+            <div class="cloud-sync-conflict" id="cloudSyncConflict" hidden>
+              <strong>この端末とクラウドで内容が違います</strong>
+              <p id="cloudSyncConflictDetail">どちらを残すか選んでください。選ばなかった側もクラウドの履歴に残ります。</p>
+              <div class="cloud-sync-actions">
+                <button class="text-button primary" id="cloudSyncKeepLocal" type="button">この端末の内容を使う</button>
+                <button class="text-button muted" id="cloudSyncKeepRemote" type="button">クラウドの内容を使う</button>
+              </div>
+            </div>
+
+            <details class="cloud-sync-history" id="cloudSyncHistory" hidden>
+              <summary>クラウドの履歴から戻す</summary>
+              <div class="cloud-sync-history-list" id="cloudSyncHistoryList"></div>
+              <button class="text-button danger" id="cloudSyncDelete" type="button">クラウド上のデータを削除</button>
+            </details>
+          </section>
+
           <section class="panel data-management local-data-panel">
             <h2>データの保存・読込</h2>
             <div class="backup-care-card" id="backupCareCard">
@@ -907,7 +992,16 @@
               </label>
               <button class="text-button danger" id="clearAll" type="button">売上記録と目標を削除</button>
             </div>
+            <p class="storage-usage-note" id="storageUsageNote" hidden></p>
+            <button class="text-button danger wipe-device-button" id="wipeDevice" type="button">この端末からデータを完全に削除</button>
+            <p class="field-note">記録・控え・復元ポイントをこの端末からすべて消します。端末を手放すときや共有端末で使い終わったときに使ってください。</p>
             <button class="guide-link-button" id="openWelcomeGuide" type="button">ホーム画面への追加・保存方法を見る</button>
+          </section>
+
+          <section class="panel data-management restore-point-panel" aria-labelledby="restorePointTitle">
+            <h2 id="restorePointTitle">この端末の復元ポイント</h2>
+            <p class="restore-point-lead">読み込みや削除の直前と1日1回、この端末内に自動で控えを残します。誤操作のときはここから戻せます。</p>
+            <div class="restore-point-list" id="restorePointList"></div>
           </section>
         </section>
 
@@ -938,7 +1032,7 @@
             </article>
           </div>
           <div class="product-discovery-note">
-            <p><strong>入力内容はこの端末内だけに保存。</strong>クラウド同期はされません。税額は納税準備用の概算です。</p>
+            <p><strong>入力内容はこの端末内だけに保存。</strong>設定からログインすると、スマートフォンとPCのクラウド同期を任意で有効にできます。税額は納税準備用の概算です。</p>
             <button class="product-share-button" id="shareApp" type="button">億メーターを共有</button>
           </div>
         </section>
@@ -1123,8 +1217,11 @@
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
     </div>
     <script defer src="/tax-calculator.js"></script>
+    <script defer src="/backup-vault.js"></script>
     <script defer src="/app.js"></script>
     <script defer src="/traffic.js"></script>
+    <script defer src="/supabase-client.js"></script>
+    <script defer src="/cloud-sync.js"></script>
     <script defer src="/ranking.js"></script>
     <script defer src="/referral.js"></script>
     <script defer src="/_vercel/insights/script.js"></script>

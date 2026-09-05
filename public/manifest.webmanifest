@@ -1,15 +1,15 @@
 {
   "name": "億メーター | 配達収益管理",
   "short_name": "億メーター",
-  "description": "フードデリバリー配達員の売上・経費・稼働時間を記録し、税額の概算、手残り、資産1億円への道を見える化します。",
+  "description": "フードデリバリー配達員の売上・経費・稼働時間を記録し、税額の概算、手残り、資産1億円への道を見える化します。ログインすると端末間のクラウド同期も使えます。",
   "lang": "ja",
   "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "categories": ["finance", "business", "productivity"],
-  "background_color": "#f2f7f3",
-  "theme_color": "#087f5b",
+  "background_color": "#ffffff",
+  "theme_color": "#1d9bf0",
   "icons": [
     {
       "src": "app-icon.png",

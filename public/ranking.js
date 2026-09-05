@@ -1,7 +1,6 @@
 "use strict";
 
 (() => {
-  const SUPABASE_SDK_URL = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3";
   const yen = new Intl.NumberFormat("ja-JP", {
     style: "currency",
     currency: "JPY",
@@ -34,22 +33,15 @@
     bindEvents();
 
     try {
-      const config = await loadConfig();
-      await loadSupabaseSdk();
-      client = window.supabase.createClient(config.url, config.publishableKey, {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true,
-          flowType: "pkce",
-        },
-      });
+      // 認証クライアントはクラウド同期と共有する。ページ内で2つ作ると
+      // トークンの自動更新が二重に動き、セッションを奪い合う。
+      client = await window.DeliSupabase.getClient();
 
       const { data, error } = await client.auth.getSession();
       if (error) throw error;
       session = data.session;
 
-      client.auth.onAuthStateChange((_event, nextSession) => {
+      window.DeliSupabase.onAuthStateChange((_event, nextSession) => {
         session = nextSession;
         setTimeout(() => refreshAuthentication(), 0);
       });
@@ -98,26 +90,6 @@
     elements.deleteData.addEventListener("click", deleteRankingData);
     elements.refresh.addEventListener("click", loadPublicRankings);
     window.addEventListener("deli:data-saved", scheduleAutomaticSync);
-  }
-
-  async function loadConfig() {
-    const response = await fetch("/api/ranking-config", { headers: { Accept: "application/json" } });
-    if (!response.ok) throw new Error("ranking unavailable");
-    const config = await response.json();
-    if (!config?.available || !config.url || !config.publishableKey) throw new Error("ranking unavailable");
-    return config;
-  }
-
-  function loadSupabaseSdk() {
-    if (window.supabase?.createClient) return Promise.resolve();
-    return new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = SUPABASE_SDK_URL;
-      script.async = true;
-      script.onload = () => window.supabase?.createClient ? resolve() : reject(new Error("SDK unavailable"));
-      script.onerror = () => reject(new Error("SDK unavailable"));
-      document.head.append(script);
-    });
   }
 
   function showUnavailable() {

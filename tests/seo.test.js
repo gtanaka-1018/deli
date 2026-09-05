@@ -62,8 +62,29 @@ test("IndexNow所有確認キーはファイル名と内容が一致する", () 
 
 test("Service Workerは別ページの応答でアプリ本体を上書きしない", () => {
   const worker = fs.readFileSync(publicPath("service-worker.js"), "utf8");
-  assert.match(worker, /const CACHE_NAME = "okumeter-v27"/);
+  // 版数は変更のたびに上がるため、値そのものではなく形式だけを固定する。
+  assert.match(worker, /const CACHE_NAME = "okumeter-v\d+"/);
   assert.doesNotMatch(worker, /"\/app-icon\.png"/);
   assert.match(worker, /url\.pathname === "\/" \? "\/index\.html" : request/);
   assert.doesNotMatch(worker, /cache\.put\("\/index\.html", copy\)/);
+});
+
+test("Service Workerが先読みするファイルはすべて公開ディレクトリに存在する", () => {
+  const worker = fs.readFileSync(publicPath("service-worker.js"), "utf8");
+  const shell = worker.slice(worker.indexOf("APP_SHELL"), worker.indexOf("];", worker.indexOf("APP_SHELL")));
+  const paths = [...shell.matchAll(/"\/([^"]*)"/g)].map((match) => match[1]);
+  assert.ok(paths.length > 0, "APP_SHELLの一覧を読み取れませんでした");
+  const missing = paths.filter((entry) => entry !== "" && !fs.existsSync(publicPath(entry)));
+  assert.deepEqual(missing, [], `公開ディレクトリに存在しないファイル: ${missing.join(", ")}`);
+});
+
+test("読み込むスクリプトとスタイルはService Workerの先読み対象に含まれる", () => {
+  const html = fs.readFileSync(publicPath("index.html"), "utf8");
+  const worker = fs.readFileSync(publicPath("service-worker.js"), "utf8");
+  const referenced = [
+    ...[...html.matchAll(/<script defer src="(\/[^"]+)"/g)].map((match) => match[1]),
+    ...[...html.matchAll(/<link rel="stylesheet" href="(\/[^"]+)"/g)].map((match) => match[1]),
+  ].filter((entry) => !entry.startsWith("/_vercel/"));
+  const missing = referenced.filter((entry) => !worker.includes(`"${entry}"`));
+  assert.deepEqual(missing, [], `APP_SHELLへの追加漏れ: ${missing.join(", ")}`);
 });

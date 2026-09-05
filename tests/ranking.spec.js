@@ -1,6 +1,9 @@
 const { test, expect } = require("@playwright/test");
 
 test.use({
+  // SDKを同一オリジンへ同梱したため、Service Worker が先に応答すると
+  // page.route の差し替えが効かない。この試験では Service Worker を止める。
+  serviceWorkers: "block",
   launchOptions: {
     executablePath: process.env.PLAYWRIGHT_BROWSER_PATH || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
   },
@@ -25,7 +28,8 @@ test("同意したユーザーだけが資産と日別売上をランキング�
       publishableKey: "sb_publishable_test_12345678901234567890",
     }),
   }));
-  await page.route("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3", (route) => route.fulfill({
+  // SDKは同一オリジンへ同梱している。差し替え先もそのパスに合わせる。
+  await page.route(/\/vendor\/supabase-js-[\d.]+\.js$/, (route) => route.fulfill({
     contentType: "application/javascript",
     body: `
       window.__rankingCalls = [];

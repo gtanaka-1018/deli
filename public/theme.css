@@ -1,0 +1,262 @@
+/*
+ * 億メーターの配色トークン。
+ *
+ * 色はこのファイルだけで決める。styles.css と x-theme.css は形と間隔を担当し、
+ * 色は var(--token) で参照する。ここを差し替えるだけでライト／ダークが切り替わる。
+ *
+ * 方針:
+ *   - 画面の骨格と操作色はXアプリに寄せる（ダークは黒地、アクセントは #1d9bf0）。
+ *   - 金額の増減を表す緑・赤・橙は意味を持つ色なので、Xの青とは別に残す。
+ *     売上や資産の「プラス」を青にすると、金額の意味が読めなくなるため。
+ *   - ダークはトークンの再定義だけで完結させる。個別の上書きを増やさない。
+ */
+
+:root {
+  color-scheme: light;
+
+  /* 下地と面 */
+  --bg: #ffffff;
+  --bg-tint-a: rgba(29, 155, 240, 0.06);
+  --bg-tint-b: rgba(0, 186, 124, 0.05);
+  --surface: #ffffff;
+  --surface-soft: #f7f9f9;
+  --surface-strong: #eff3f4;
+  --surface-inverse: #0f1419;
+
+  /* 文字 */
+  --ink: #0f1419;
+  --ink-strong: #0f1419;
+  --muted: #536471;
+  --on-accent: #ffffff;
+  --on-inverse: #ffffff;
+
+  /* 罫線 */
+  --line: #cfd9de;
+  --line-soft: #eff3f4;
+  --line-strong: #aab8c2;
+
+  /* 操作色（Xの青） */
+  --accent: #1d9bf0;
+  --accent-hover: #1a8cd8;
+  --accent-solid: #0d6ba8;
+  --accent-text: #0d6ba8;
+  --accent-soft: #e8f5fe;
+  --accent-border: rgba(29, 155, 240, 0.4);
+  --accent-ring: rgba(29, 155, 240, 0.22);
+
+  /* 旧トークン名の互換。既存CSSが --blue / --violet / --cyan を参照している。 */
+  --blue: #1d9bf0;
+  --blue-soft: #e8f5fe;
+  --violet: #7856ff;
+  --violet-soft: #eee9ff;
+  --cyan: #1d9bf0;
+  --cyan-soft: #e8f5fe;
+
+  /* 金額の意味を持つ色 */
+  --green: #00743f;
+  --green-soft: #e3f5ec;
+  --green-border: rgba(0, 186, 124, 0.38);
+  --amber: #8a5608;
+  --amber-soft: #fdf2dd;
+  --amber-border: rgba(255, 173, 31, 0.42);
+  --red: #c02b34;
+  --red-soft: #fdeaec;
+  --red-border: rgba(244, 33, 46, 0.36);
+
+  /* 影と覆い */
+  --shadow: 0 1px 3px rgba(15, 20, 25, 0.08), 0 8px 28px rgba(15, 20, 25, 0.06);
+  --shadow-strong: 0 12px 40px rgba(15, 20, 25, 0.14);
+  --shadow-accent: 0 6px 20px rgba(29, 155, 240, 0.24);
+  --overlay: rgba(15, 20, 25, 0.4);
+  --skeleton: #eff3f4;
+
+  /* メーターなど、意図的に暗い面を持つ部品 */
+  --meter-bg: #0f1419;
+  --meter-ink: #ffffff;
+  --meter-muted: rgba(255, 255, 255, 0.66);
+  --meter-line: rgba(255, 255, 255, 0.16);
+  --meter-fill: #1d9bf0;
+  --meter-glow: #7ce2ff;
+
+  /* 上部バー */
+  --topbar-bg: rgba(255, 255, 255, 0.92);
+  --topbar-ink: #0f1419;
+  --topbar-muted: #536471;
+  --topbar-line: #eff3f4;
+  --topbar-chip: rgba(15, 20, 25, 0.06);
+
+  /* 透過色を組み立てるための三原色。rgb(var(--x-rgb) / 透明度) で使う。 */
+  --white-rgb: 255 255 255;
+  --surface-rgb: 255 255 255;
+  --shadow-rgb: 15 20 25;
+  --line-rgb: 207 217 222;
+  --accent-rgb: 29 155 240;
+  --glow-rgb: 0 186 124;
+  --violet-rgb: 120 86 255;
+  --amber-rgb: 255 173 31;
+  --red-rgb: 244 33 46;
+}
+
+/*
+ * ダーク。OSの設定に従う既定と、画面から選ぶ手動指定の両方を用意する。
+ * 手動でライトを選んだときはOSの設定より優先する。
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bg: #000000;
+    --bg-tint-a: rgba(29, 155, 240, 0.1);
+    --bg-tint-b: rgba(0, 186, 124, 0.07);
+    --surface: #16181c;
+    --surface-soft: #1c1f23;
+    --surface-strong: #22262b;
+    --surface-inverse: #e7e9ea;
+
+    --ink: #e7e9ea;
+    --ink-strong: #ffffff;
+    --muted: #9aa7b4;
+    --on-accent: #ffffff;
+    --on-inverse: #0f1419;
+
+    --line: #2f3336;
+    --line-soft: #21262b;
+    --line-strong: #3d4247;
+
+    --accent: #1d9bf0;
+    --accent-hover: #4fb2f5;
+    --accent-solid: #0d6ba8;
+    --accent-text: #6cb9f5;
+    --accent-soft: rgba(29, 155, 240, 0.16);
+    --accent-border: rgba(29, 155, 240, 0.55);
+    --accent-ring: rgba(29, 155, 240, 0.35);
+
+    --blue: #1d9bf0;
+    --blue-soft: rgba(29, 155, 240, 0.16);
+    --violet: #9c84ff;
+    --violet-soft: rgba(120, 86, 255, 0.2);
+    --cyan: #1d9bf0;
+    --cyan-soft: rgba(29, 155, 240, 0.16);
+
+    --green: #00ba7c;
+    --green-soft: rgba(0, 186, 124, 0.16);
+    --green-border: rgba(0, 186, 124, 0.45);
+    --amber: #ffad1f;
+    --amber-soft: rgba(255, 173, 31, 0.16);
+    --amber-border: rgba(255, 173, 31, 0.45);
+    --red: #ff6b71;
+    --red-soft: rgba(244, 33, 46, 0.16);
+    --red-border: rgba(244, 33, 46, 0.45);
+
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.6), 0 8px 28px rgba(0, 0, 0, 0.5);
+    --shadow-strong: 0 12px 40px rgba(0, 0, 0, 0.7);
+    --shadow-accent: 0 6px 20px rgba(29, 155, 240, 0.35);
+    --overlay: rgba(0, 0, 0, 0.72);
+    --skeleton: #22262b;
+
+    --meter-bg: #16181c;
+    --meter-ink: #ffffff;
+    --meter-muted: rgba(231, 233, 234, 0.66);
+    --meter-line: rgba(255, 255, 255, 0.14);
+    --meter-fill: #1d9bf0;
+    --meter-glow: #7ce2ff;
+
+    --topbar-bg: rgba(0, 0, 0, 0.85);
+    --topbar-ink: #e7e9ea;
+    --topbar-muted: #8b98a5;
+    --topbar-line: #2f3336;
+    --topbar-chip: rgba(231, 233, 234, 0.1);
+
+    --white-rgb: 255 255 255;
+    --surface-rgb: 22 24 28;
+    --shadow-rgb: 0 0 0;
+    --line-rgb: 47 51 54;
+    --accent-rgb: 29 155 240;
+    --glow-rgb: 0 186 124;
+    --violet-rgb: 156 132 255;
+    --amber-rgb: 255 173 31;
+    --red-rgb: 244 33 46;
+  }
+}
+
+/* 画面から「ダーク」を選んだとき。OSの設定より優先する。 */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #000000;
+  --bg-tint-a: rgba(29, 155, 240, 0.1);
+  --bg-tint-b: rgba(0, 186, 124, 0.07);
+  --surface: #16181c;
+  --surface-soft: #1c1f23;
+  --surface-strong: #22262b;
+  --surface-inverse: #e7e9ea;
+
+  --ink: #e7e9ea;
+  --ink-strong: #ffffff;
+  --muted: #9aa7b4;
+  --on-accent: #ffffff;
+  --on-inverse: #0f1419;
+
+  --line: #2f3336;
+  --line-soft: #21262b;
+  --line-strong: #3d4247;
+
+  --accent: #1d9bf0;
+  --accent-hover: #4fb2f5;
+  --accent-solid: #0d6ba8;
+  --accent-text: #6cb9f5;
+  --accent-soft: rgba(29, 155, 240, 0.16);
+  --accent-border: rgba(29, 155, 240, 0.55);
+  --accent-ring: rgba(29, 155, 240, 0.35);
+
+  --blue: #1d9bf0;
+  --blue-soft: rgba(29, 155, 240, 0.16);
+  --violet: #9c84ff;
+  --violet-soft: rgba(120, 86, 255, 0.2);
+  --cyan: #1d9bf0;
+  --cyan-soft: rgba(29, 155, 240, 0.16);
+
+  --green: #00ba7c;
+  --green-soft: rgba(0, 186, 124, 0.16);
+  --green-border: rgba(0, 186, 124, 0.45);
+  --amber: #ffad1f;
+  --amber-soft: rgba(255, 173, 31, 0.16);
+  --amber-border: rgba(255, 173, 31, 0.45);
+  --red: #ff6b71;
+  --red-soft: rgba(244, 33, 46, 0.16);
+  --red-border: rgba(244, 33, 46, 0.45);
+
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.6), 0 8px 28px rgba(0, 0, 0, 0.5);
+  --shadow-strong: 0 12px 40px rgba(0, 0, 0, 0.7);
+  --shadow-accent: 0 6px 20px rgba(29, 155, 240, 0.35);
+  --overlay: rgba(0, 0, 0, 0.72);
+  --skeleton: #22262b;
+
+  --meter-bg: #16181c;
+  --meter-ink: #ffffff;
+  --meter-muted: rgba(231, 233, 234, 0.66);
+  --meter-line: rgba(255, 255, 255, 0.14);
+  --meter-fill: #1d9bf0;
+  --meter-glow: #7ce2ff;
+
+  --topbar-bg: rgba(0, 0, 0, 0.85);
+  --topbar-ink: #e7e9ea;
+  --topbar-muted: #8b98a5;
+  --topbar-line: #2f3336;
+  --topbar-chip: rgba(231, 233, 234, 0.1);
+
+  --white-rgb: 255 255 255;
+  --surface-rgb: 22 24 28;
+  --shadow-rgb: 0 0 0;
+  --line-rgb: 47 51 54;
+  --accent-rgb: 29 155 240;
+  --glow-rgb: 0 186 124;
+  --violet-rgb: 156 132 255;
+  --amber-rgb: 255 173 31;
+  --red-rgb: 244 33 46;
+}
+
+/* 手動でライトを選んだときは、OSがダークでも既定値のままにする。 */
+:root[data-theme="light"] {
+  color-scheme: light;
+}

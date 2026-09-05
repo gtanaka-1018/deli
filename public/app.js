@@ -1,6 +1,11 @@
 const STORAGE_KEY = "deli-sales-tracker-v1";
 const ONBOARDING_KEY = "deli-onboarding-complete-v1";
 const LAST_BACKUP_KEY = "deli-last-backup-v1";
+// 保存データの形式が変わったときに上げる。読み込み側は未知の版数でも壊さず読む。
+const SCHEMA_VERSION = 2;
+const THEME_KEY = "deli-theme-v1";
+// 同期していない状態の保存先表示。クラウド同期が動き出したら上書きされる。
+const DEFAULT_STORAGE_MODE_LABEL = "この端末内だけに保存";
 const OKU_METER_GOAL = 100_000_000;
 const OKU_METER_MILESTONES = [1_000_000, 10_000_000, 50_000_000, OKU_METER_GOAL];
 const ASSET_FIELDS = Object.freeze([
@@ -69,6 +74,11 @@ let editingVehicleId = "";
 let vehicleDialogTrigger = null;
 let odometerIndexCache = null;
 let periodPickerCursor = new Date();
+// 保存データが壊れて復旧もできなかったときに理由を保持し、上書き保存を止める。
+let saveBlockedReason = "";
+let recoveredFromVault = false;
+let storageUsage = null;
+let storageModeText = "";
 
 document.addEventListener("DOMContentLoaded", () => {
   startApp();
@@ -83,9 +93,76 @@ async function startApp() {
   fillFormForDate(state.selectedDate);
   render({ shouldPersist: false });
   registerServiceWorker();
+  setupTheme();
   setupWelcomeGuide();
-  if ("requestIdleCallback" in window) window.requestIdleCallback(requestPersistentStorage, { timeout: 2000 });
-  else setTimeout(requestPersistentStorage, 0);
+  if ("requestIdleCallback" in window) window.requestIdleCallback(prepareStorageSafetyNet, { timeout: 2000 });
+  else setTimeout(prepareStorageSafetyNet, 0);
+}
+
+/** 起動直後の空き時間に、保存の永続化・使用量の把握・自動復元ポイントをまとめて行う。 */
+async function prepareStorageSafetyNet() {
+  await requestPersistentStorage();
+
+  storageUsage = (await window.DeliVault?.usage()) || null;
+  if (currentScreen === "settings") renderStorageUsage();
+
+  // 起動のたびに控えを取り直す。保存操作をしない日が続いても控えが残るようにする。
+  if (!saveBlockedReason) await window.DeliVault?.mirror(snapshotState());
+
+  await saveDailyRestorePoint();
+  if (currentScreen === "settings") renderRestorePoints();
+}
+
+/**
+ * 表示テーマ。既定は端末（OS）の設定に従い、選んだ場合だけ手動指定を保存する。
+ * 初期適用は index.html の先頭スクリプトが済ませているため、ここでは操作を担う。
+ */
+function setupTheme() {
+  document.querySelectorAll("[data-theme-choice]").forEach((button) => {
+    button.addEventListener("click", () => applyTheme(button.dataset.themeChoice));
+  });
+  // 端末の設定が変わったときも、手動指定がなければ追従する。
+  window.matchMedia?.("(prefers-color-scheme: dark)")
+    ?.addEventListener?.("change", () => updateThemeColorMeta());
+  renderThemeChoice();
+  updateThemeColorMeta();
+}
+
+function currentThemeChoice() {
+  const value = document.documentElement.dataset.theme;
+  return value === "dark" || value === "light" ? value : "system";
+}
+
+function applyTheme(choice) {
+  if (choice === "system") delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = choice;
+
+  try {
+    if (choice === "system") localStorage.removeItem(THEME_KEY);
+    else localStorage.setItem(THEME_KEY, choice);
+  } catch {
+    // 保存できなくても、この画面を開いている間は選んだテーマで表示される。
+  }
+
+  renderThemeChoice();
+  updateThemeColorMeta();
+}
+
+function renderThemeChoice() {
+  const active = currentThemeChoice();
+  document.querySelectorAll("[data-theme-choice]").forEach((button) => {
+    const isActive = button.dataset.themeChoice === active;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-checked", String(isActive));
+  });
+}
+
+/** ブラウザーのアドレスバーとPWAのステータスバーの色を、実際の背景に合わせる。 */
+function updateThemeColorMeta() {
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) return;
+  const background = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
+  if (background) meta.setAttribute("content", background);
 }
 
 function registerServiceWorker() {
@@ -178,6 +255,9 @@ function bindElements() {
     "backupCareCard",
     "backupCareTitle",
     "backupCareMessage",
+    "storageUsageNote",
+    "restorePointList",
+    "wipeDevice",
     "openWelcomeGuide",
     "welcomeDialog",
     "welcomeStart",
@@ -509,6 +589,8 @@ function bindEvents() {
   els.exportJson.addEventListener("click", exportBackup);
   els.importJson.addEventListener("change", importBackup);
   els.clearAll.addEventListener("click", clearAllData);
+  els.restorePointList.addEventListener("click", restoreFromPoint);
+  els.wipeDevice.addEventListener("click", wipeDeviceData);
   els.openWelcomeGuide.addEventListener("click", () => openWelcomeGuide(true));
   els.welcomeStart.addEventListener("click", closeWelcomeGuide);
   els.welcomeClose.addEventListener("click", closeWelcomeGuide);
@@ -518,18 +600,50 @@ function bindEvents() {
       event.returnValue = "";
     }
   });
+
+  // 画面を閉じる・アプリを背面に回すときに、待機中の自動保存を取りこぼさない。
+  // スマートフォンでは beforeunload が発火しないことがあるため pagehide も見る。
+  window.addEventListener("pagehide", flushPendingPersist);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") flushPendingPersist();
+  });
 }
 
 async function loadState() {
   try {
-    const snapshot = await readBrowserSnapshot();
-    if (snapshot) applySnapshot(snapshot);
+    const outcome = await readBrowserSnapshot();
+    if (outcome.snapshot) applySnapshot(outcome.snapshot);
+    describeLoadOutcome(outcome);
   } catch {
     showToast("保存データを読み込めませんでした");
   }
 }
 
+/**
+ * 保存データが壊れていた場合の扱いをユーザーへ伝える。
+ * 復旧できなかったときは自動保存を止め、壊れた元データを上書きさせない。
+ */
+function describeLoadOutcome(outcome) {
+  if (outcome.snapshot && outcome.source !== "browser") {
+    const origin = outcome.source === "mirror" ? "端末内の控え" : "復元ポイント";
+    const cause = outcome.corrupt ? "保存データが壊れていたため" : "保存データが見つからなかったため";
+    recoveredFromVault = true;
+    // 復元した内容をすぐ書き戻す。壊れた値を残したままにすると、
+    // 次回起動でも同じ復旧処理が走り、退避データが増え続ける。
+    persistBrowserSnapshot();
+    showToast(`${cause}${origin}から復元しました`);
+    return;
+  }
+
+  if (outcome.corrupt) {
+    saveBlockedReason = "保存データが壊れています。上書きを防ぐため自動保存を止めています。";
+    showToast("保存データを読み込めませんでした。設定画面の復元をご確認ください");
+  }
+}
+
 async function persist() {
+  if (saveBlockedReason) throw new Error(saveBlockedReason);
+
   const snapshot = snapshotState();
   const browserOk = persistBrowserSnapshot(snapshot);
 
@@ -537,13 +651,28 @@ async function persist() {
     throw new Error("Unable to save data");
   }
 
+  // 控えは best-effort。失敗しても localStorage への保存は成立している。
+  window.DeliVault?.mirror(snapshot);
   window.dispatchEvent(new Event("deli:data-saved"));
   return { browserOk };
+}
+
+/**
+ * 待機中の自動保存を即座に実行する。離脱時に呼ぶため、
+ * localStorage への同期書き込みだけを行い、非同期の控えは待たない。
+ */
+function flushPendingPersist() {
+  if (!persistTimer) return;
+  clearTimeout(persistTimer);
+  persistTimer = 0;
+  if (saveBlockedReason) return;
+  persistBrowserSnapshot();
 }
 
 function schedulePersist() {
   clearTimeout(persistTimer);
   persistTimer = setTimeout(() => {
+    persistTimer = 0;
     persist().catch(() => showToast("自動保存に失敗しました"));
   }, 120);
 }
@@ -599,6 +728,37 @@ window.DeliRankingData = Object.freeze({
   getPublishableSnapshot: publishableRankingSnapshot,
 });
 
+/**
+ * クラウド同期から端末内データを読み書きするための窓口。
+ * 保存の正本は localStorage のままで、同期は取り込みと送り出しだけを行う。
+ */
+window.DeliSyncData = Object.freeze({
+  getSnapshot: () => snapshotState(),
+  getSchemaVersion: () => SCHEMA_VERSION,
+  getRecordCount: () => Object.keys(state.records).length,
+  isSaveBlocked: () => saveBlockedReason !== "",
+  saveRestorePoint: (reason) => window.DeliVault?.saveRestorePoint(snapshotState(), reason),
+  /** クラウドから取り込んだ内容を端末へ反映する。取り込み前の状態は復元ポイントへ残す。 */
+  applyRemoteSnapshot: async (snapshot) => {
+    if (!isPlainObject(snapshot)) throw new Error("Invalid snapshot");
+    if (Object.keys(state.records).length > 0) {
+      await window.DeliVault?.saveRestorePoint(snapshotState(), "before-restore");
+    }
+    applySnapshot(snapshot);
+    state.selectedDate = todayString();
+    clearTimeout(persistTimer);
+    saveBlockedReason = "";
+    await persist();
+    fillFormForDate(state.selectedDate);
+    render({ shouldPersist: false });
+  },
+  /** ヘッダーの保存先表示を同期状態に合わせて更新する。 */
+  setStorageMode: (label) => {
+    storageModeText = label || "";
+    if (els.storageModeLabel) els.storageModeLabel.textContent = storageModeText || DEFAULT_STORAGE_MODE_LABEL;
+  },
+});
+
 function applySnapshot(snapshot) {
   state.view = ["day", "week", "month", "year"].includes(snapshot.view) ? snapshot.view : "day";
   state.selectedDate = snapshot.selectedDate || todayString();
@@ -613,13 +773,48 @@ function applySnapshot(snapshot) {
   invalidateOdometerIndex();
 }
 
+/**
+ * 保存データを読み出す。localStorage が壊れている・消えている場合は
+ * IndexedDB の控えと復元ポイントを順に探し、見つかった内容で起動する。
+ * 戻り値の corrupt が true のときは、壊れた生データを退避済みである。
+ */
 async function readBrowserSnapshot() {
+  let raw = null;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    raw = localStorage.getItem(STORAGE_KEY);
   } catch {
-    return null;
+    // プライベートモードなどで読めない場合も、控えからの復旧を試みる。
+    return recoverFromVault({ corrupt: false });
   }
+
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (isPlainObject(parsed)) return { snapshot: parsed, source: "browser", corrupt: false };
+      throw new Error("Unexpected snapshot shape");
+    } catch {
+      const quarantineKey = (await window.DeliVault?.quarantine(raw)) || "";
+      return recoverFromVault({ corrupt: true, quarantineKey });
+    }
+  }
+
+  // 保存キーが空でも、控えが残っていれば端末内で復旧できる。
+  return recoverFromVault({ corrupt: false });
+}
+
+async function recoverFromVault(context) {
+  const mirrored = await window.DeliVault?.readMirror();
+  if (mirrored?.snapshot && isPlainObject(mirrored.snapshot)) {
+    return { ...context, snapshot: mirrored.snapshot, source: "mirror" };
+  }
+
+  const points = (await window.DeliVault?.listRestorePoints()) || [];
+  if (points.length > 0) {
+    const snapshot = await window.DeliVault?.readRestorePoint(points[0].id);
+    if (isPlainObject(snapshot)) return { ...context, snapshot, source: "restore-point" };
+  }
+
+  return { ...context, snapshot: null, source: "none" };
 }
 
 function persistBrowserSnapshot(snapshot = snapshotState()) {
@@ -1594,7 +1789,11 @@ async function saveCurrentRecord() {
 }
 
 async function clearAllData() {
-  if (!confirm("すべての記録と目標売上を削除しますか？")) return;
+  if (!confirm("すべての記録と目標売上を削除しますか？\n削除の直前に復元ポイントを作成します。")) return;
+
+  // 取り消せない操作の直前に、この端末内へ復元ポイントを残す。
+  await window.DeliVault?.saveRestorePoint(snapshotState(), "before-clear");
+
   state.records = {};
   state.targets = {};
   state.lastVehicleId = "";
@@ -1605,10 +1804,37 @@ async function clearAllData() {
     await persist();
     fillFormForDate(state.selectedDate);
     render({ shouldPersist: false });
-    showToast("全データを削除しました");
+    showToast("売上記録と目標を削除しました");
   } catch {
     showToast("削除後の保存に失敗しました");
   }
+}
+
+/**
+ * この端末から記録・控え・復元ポイントをすべて消す。
+ * 端末を手放すときの出口。クラウド上のデータとログインは対象外で、
+ * 必要ならクラウド同期の画面から別途削除する。
+ */
+async function wipeDeviceData() {
+  if (!confirm(
+    "この端末から記録・控え・復元ポイントをすべて削除しますか？\nこの操作は取り消せません。必要なら先にファイル保存をしてください。"
+  )) return;
+  if (!confirm("本当に削除しますか？この端末に残っている記録は戻せなくなります。")) return;
+
+  clearTimeout(persistTimer);
+  await window.DeliVault?.clearAll();
+
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(LAST_BACKUP_KEY);
+    localStorage.removeItem("deli-cloud-sync-v1");
+  } catch {
+    // 消せないキーがあっても、続けて画面上の状態は初期化する。
+  }
+
+  // 消した直後に自動保存が走ると復活してしまうため、再読み込みで初期状態へ戻す。
+  showToast("この端末のデータを削除しました");
+  setTimeout(() => window.location.reload(), 600);
 }
 
 function render(options = {}) {
@@ -1616,7 +1842,7 @@ function render(options = {}) {
 
   els.selectedDate.value = state.selectedDate;
   if (["input", "summary", "plan"].includes(currentScreen)) renderPeriodControls();
-  els.storageModeLabel.textContent = "この端末内だけに保存";
+  els.storageModeLabel.textContent = storageModeText || DEFAULT_STORAGE_MODE_LABEL;
   els.monthlyTarget.value = valueOrEmpty(state.targets[monthKey(state.selectedDate)] || 0);
   document.querySelectorAll(".screen-tab").forEach((tab) => {
     const isActive = tab.dataset.screen === currentScreen;
@@ -1657,6 +1883,120 @@ function renderSettings() {
   renderProviderSettings();
   renderVehicleSettings();
   renderBackupCare();
+  renderStorageUsage();
+  renderRestorePoints();
+}
+
+function renderStorageUsage() {
+  if (!storageUsage) {
+    els.storageUsageNote.hidden = true;
+    return;
+  }
+  const usedMb = (storageUsage.used / 1_048_576).toFixed(1);
+  const percent = Math.round(storageUsage.ratio * 100);
+  els.storageUsageNote.hidden = false;
+  els.storageUsageNote.classList.toggle("attention", storageUsage.ratio >= 0.8);
+  els.storageUsageNote.textContent = storageUsage.ratio >= 0.8
+    ? `この端末の保存領域を${usedMb}MB（約${percent}%）使っています。空きが少ないと保存に失敗します。ファイル保存をおすすめします。`
+    : `この端末の保存領域の使用量：${usedMb}MB（約${percent}%）`;
+}
+
+async function renderRestorePoints() {
+  const points = (await window.DeliVault?.listRestorePoints()) || [];
+  els.restorePointList.replaceChildren();
+
+  if (points.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "restore-point-empty";
+    empty.textContent = window.DeliVault?.supported()
+      ? "まだ復元ポイントはありません。"
+      : "このブラウザーでは復元ポイントを保存できません。ファイル保存をお使いください。";
+    els.restorePointList.append(empty);
+    return;
+  }
+
+  points.forEach((point) => {
+    const row = document.createElement("div");
+    row.className = "restore-point-item";
+
+    const description = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = restorePointLabel(point.reason);
+    const detail = document.createElement("p");
+    detail.textContent = `${formatDateTime(point.savedAt)}・${formatNumber(point.recordCount)}日分`;
+    description.append(title, detail);
+
+    const restore = document.createElement("button");
+    restore.className = "text-button muted";
+    restore.type = "button";
+    restore.dataset.restoreId = point.id;
+    restore.textContent = "この状態に戻す";
+
+    row.append(description, restore);
+    els.restorePointList.append(row);
+  });
+}
+
+function restorePointLabel(reason) {
+  return {
+    "before-import": "ファイル読み込みの直前",
+    "before-clear": "削除の直前",
+    "before-restore": "復元の直前",
+    daily: "自動保存（1日1回）",
+  }[reason] || "自動保存";
+}
+
+function formatDateTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "日時不明";
+  return date.toLocaleString("ja-JP", {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+async function restoreFromPoint(event) {
+  const button = event.target.closest("[data-restore-id]");
+  if (!button) return;
+  if (!confirmDiscardDraft("未保存の入力があります。破棄して復元しますか？")) return;
+  if (!confirm("この復元ポイントの内容で現在の記録を置き換えますか？\n復元の直前の状態も復元ポイントに残します。")) return;
+
+  const snapshot = await window.DeliVault?.readRestorePoint(button.dataset.restoreId);
+  if (!isPlainObject(snapshot)) {
+    showToast("復元ポイントを読み込めませんでした");
+    return;
+  }
+
+  await window.DeliVault?.saveRestorePoint(snapshotState(), "before-restore");
+  applySnapshot(snapshot);
+  // 復元後も操作日は今日のまま扱う。過去日のフォームが開いたままにならないようにする。
+  state.selectedDate = todayString();
+  clearTimeout(persistTimer);
+  saveBlockedReason = "";
+
+  try {
+    await persist();
+    fillFormForDate(state.selectedDate);
+    render({ shouldPersist: false });
+    showToast("復元ポイントから戻しました");
+  } catch {
+    showToast("復元後の保存に失敗しました");
+  }
+}
+
+/** 1日1回、健全なデータがあるときだけ自動の復元ポイントを残す。 */
+async function saveDailyRestorePoint() {
+  if (saveBlockedReason) return;
+  if (Object.keys(state.records).length === 0) return;
+
+  const points = (await window.DeliVault?.listRestorePoints()) || [];
+  const latestDaily = points.find((point) => point.reason === "daily");
+  if (latestDaily && String(latestDaily.savedAt).slice(0, 10) === todayString()) return;
+
+  await window.DeliVault?.saveRestorePoint(snapshotState(), "daily");
 }
 
 function applyRequestedScreen() {
@@ -3308,6 +3648,7 @@ function workSessionMinutes(session) {
 function exportBackup() {
   const payload = JSON.stringify(
     {
+      schemaVersion: SCHEMA_VERSION,
       exportedAt: new Date().toISOString(),
       records: state.records,
       targets: state.targets,
@@ -3316,6 +3657,7 @@ function exportBackup() {
       lastVehicleId: state.lastVehicleId,
       taxYear: state.taxYear,
       taxProfiles: state.taxProfiles,
+      assets: state.assets,
     },
     null,
     2
@@ -3353,6 +3695,13 @@ function importBackup(event) {
       if (parsed.providers !== undefined && !Array.isArray(parsed.providers)) throw new Error("Invalid providers");
       if (parsed.vehicles !== undefined && !Array.isArray(parsed.vehicles)) throw new Error("Invalid vehicles");
       if (parsed.taxProfiles !== undefined && !isPlainObject(parsed.taxProfiles)) throw new Error("Invalid tax profiles");
+      if (parsed.assets !== undefined && !isPlainObject(parsed.assets)) throw new Error("Invalid assets");
+
+      // 読み込みは既存の記録を丸ごと置き換えるため、直前の状態を復元ポイントに残す。
+      if (Object.keys(state.records).length > 0) {
+        await window.DeliVault?.saveRestorePoint(snapshotState(), "before-import");
+      }
+
       state.records = parsed.records;
       state.targets = parsed.targets || {};
       state.providers = normalizeProviders(parsed.providers, state.records);
@@ -3360,6 +3709,8 @@ function importBackup(event) {
       state.lastVehicleId = validVisibleVehicleId(parsed.lastVehicleId) || latestRecordedVehicleId();
       state.taxYear = Number(parsed.taxYear) || state.taxYear;
       state.taxProfiles = normalizeTaxProfiles(parsed.taxProfiles);
+      // 資産は 2026-09 より前のファイルには含まれない。その場合は端末内の値を保つ。
+      if (parsed.assets !== undefined) state.assets = normalizeAssetValues(parsed.assets);
       invalidateOdometerIndex();
       clearTimeout(persistTimer);
       await persist();

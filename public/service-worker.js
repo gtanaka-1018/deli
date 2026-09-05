@@ -1,13 +1,17 @@
-const CACHE_NAME = "okumeter-v27";
+const CACHE_NAME = "okumeter-v28";
 const APP_SHELL = [
   "/",
   "/index.html",
+  "/theme.css",
   "/styles.css",
   "/x-theme.css",
   "/tax-calculator.js",
+  "/backup-vault.js",
   "/app.js",
   "/traffic.js",
   "/referral.js",
+  "/supabase-client.js",
+  "/cloud-sync.js",
   "/ranking.js",
   "/manifest.webmanifest",
   "/brand-mark.svg",

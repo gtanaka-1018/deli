@@ -27,22 +27,31 @@ async function seedState(page, snapshot) {
   }, snapshot);
 }
 
+// アプリは起動時に必ず今日を選択するため、テストデータも実行日を基準に組み立てる。
+function currentMonthKey() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function currentYear() {
+  return new Date().getFullYear();
+}
+
 test("達成率は数値だけを表示し、時間帯別の推定効率を集計する", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  const month = currentMonthKey();
   await seedState(page, {
     view: "month",
-    selectedDate: "2026-08-12",
     records: {
-      "2026-08-01": record("2026-08-01", 6000, 6, [{ startTime: "06:00", endTime: "09:00" }]),
-      "2026-08-02": record("2026-08-02", 12000, 9, [{ startTime: "18:00", endTime: "21:00" }]),
-      "2026-08-03": record("2026-08-03", 9000, 6, [{ startTime: "23:00", endTime: "02:00" }]),
-      "2026-08-04": record("2026-08-04", 3000, 3, [], 1),
+      [`${month}-01`]: record(`${month}-01`, 6000, 6, [{ startTime: "06:00", endTime: "09:00" }]),
+      [`${month}-02`]: record(`${month}-02`, 12000, 9, [{ startTime: "18:00", endTime: "21:00" }]),
+      [`${month}-03`]: record(`${month}-03`, 9000, 6, [{ startTime: "23:00", endTime: "02:00" }]),
+      [`${month}-04`]: record(`${month}-04`, 3000, 3, [], 1),
     },
-    targets: { "2026-08": 20000 },
+    targets: { [month]: 20000 },
     providers: [provider],
     vehicles: [],
     taxProfiles: {},
-    taxYear: 2026,
     updatedAt: "2099-01-01T00:00:00.000Z",
   });
 
@@ -76,18 +85,17 @@ test("達成率は数値だけを表示し、時間帯別の推定効率を集�
   }
 });
 
-test("開始・終了時刻がない過去年には説明を表示する", async ({ page }) => {
+test("開始・終了時刻がない記録だけの年には説明を表示する", async ({ page }) => {
+  const year = currentYear();
   await seedState(page, {
     view: "year",
-    selectedDate: "2024-06-01",
     records: {
-      "2024-06-01": record("2024-06-01", 10000, 10),
+      [`${year}-01-06`]: record(`${year}-01-06`, 10000, 10),
     },
     targets: {},
     providers: [provider],
     vehicles: [],
     taxProfiles: {},
-    taxYear: 2024,
     updatedAt: "2099-01-01T00:00:00.000Z",
   });
 
