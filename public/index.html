@@ -303,9 +303,38 @@
                   <input id="odometerKm" type="number" min="0" step="0.1" inputmode="decimal" placeholder="例：35196" />
                   <small class="odometer-hint" id="odometerHint">前回の記録を入力すると当日分を自動計算します</small>
                 </label>
+                <fieldset class="weather-field">
+                  <legend>天気</legend>
+                  <div class="weather-options" id="weatherOptions">
+                    <label class="weather-option">
+                      <input type="radio" name="weather" value="" checked />
+                      <span><i aria-hidden="true">–</i>未選択</span>
+                    </label>
+                    <label class="weather-option">
+                      <input type="radio" name="weather" value="晴" />
+                      <span><i aria-hidden="true">☀</i>晴</span>
+                    </label>
+                    <label class="weather-option">
+                      <input type="radio" name="weather" value="曇" />
+                      <span><i aria-hidden="true">☁</i>曇</span>
+                    </label>
+                    <label class="weather-option">
+                      <input type="radio" name="weather" value="雨" />
+                      <span><i aria-hidden="true">☂</i>雨</span>
+                    </label>
+                    <label class="weather-option">
+                      <input type="radio" name="weather" value="雪" />
+                      <span><i aria-hidden="true">❄</i>雪</span>
+                    </label>
+                    <label class="weather-option">
+                      <input type="radio" name="weather" value="雷" />
+                      <span><i aria-hidden="true">⚡</i>雷</span>
+                    </label>
+                  </div>
+                </fieldset>
                 <label class="memo-field">
                   1日のメモ
-                  <input id="memo" type="text" maxlength="120" placeholder="例：夜勤、雨、メンテナンス" />
+                  <input id="memo" type="text" maxlength="120" placeholder="例：夜勤、クエスト達成、メンテナンス" />
                 </label>
               </div>
               <div class="source-data-summary" id="sourceDataSummary" hidden></div>

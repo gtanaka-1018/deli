@@ -2259,7 +2259,7 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
 .input-calendar-day.is-today:not(.is-selected) { background: var(--surface-soft); box-shadow: none; }
 .input-calendar-date { top: 5px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: 600; }
 .input-calendar-day.is-today .input-calendar-date::after { display: block; width: 4px; height: 4px; margin: 1px auto 0; border-radius: 50%; background: var(--accent); content: ""; }
-.input-calendar-weather { font-size: 12px; top: 8px; }
+.input-calendar-weather { font-size: 12px; top: 7px; right: 7px; line-height: 1; }
 .input-calendar-count { font-size: 12px; line-height: 1.3; }
 .input-calendar-day strong { font-size: 13px; line-height: 1.35; font-weight: 600; }
 .input-calendar-add { visibility: hidden; }
@@ -2375,7 +2375,7 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
   .input-calendar-day, .input-calendar-spacer { min-height: 56px; border-radius: 0; }
   .input-calendar-day { padding: 28px 1px 5px; }
   .input-calendar-date { top: 3px; left: 50%; font-size: 14px; }
-  .input-calendar-weather { top: 5px; right: 1px; font-size: 12px; }
+  .input-calendar-weather { top: 4px; right: 4px; font-size: 12px; line-height: 1; }
   .input-calendar-count { display: none; }
   .input-calendar-day strong { font-size: 12px; letter-spacing: -0.055em; }
   #inputScreen .input-panel { width: calc(100% + 32px); margin-inline: -16px; padding: 24px 16px; border: 0; border-radius: 0; background: var(--bg); }
@@ -2413,4 +2413,81 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
   .input-calendar-day strong { font-size: 12px; }
   #inputScreen .daily-calc strong { font-size: 20px; }
   #inputScreen .daily-calc > div:first-child strong { font-size: 25px; }
+}
+
+/* 天気の選択。1タップで選べるよう、並んだボタンとして扱う。 */
+.weather-field {
+  grid-column: 1 / -1;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.weather-field legend {
+  padding: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.weather-options {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.weather-option {
+  min-width: 0;
+}
+
+.weather-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.weather-option span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 52px;
+  padding: 6px 2px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.weather-option span i {
+  font-size: 17px;
+  font-style: normal;
+  line-height: 1;
+}
+
+.weather-option span:hover {
+  border-color: var(--accent-border);
+  background: var(--surface-soft);
+}
+
+.weather-option input:checked + span {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.weather-option input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }

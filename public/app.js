@@ -982,6 +982,7 @@ function blankRecord(date) {
     fuelLiters: 0,
     otherExpense: 0,
     memo: "",
+    weather: "",
     sourceData: {},
   };
 }
@@ -1014,6 +1015,7 @@ function fillFormForDate(date) {
   draftExpenses = record.expenses.map((expense) => ({ ...expense }));
   renderExpenseList();
   els.memo.value = record.memo || "";
+  setWeatherInput(record.weather || "");
   draftSourceData = { ...record.sourceData };
   renderSourceDataSummary();
   els.monthlyTarget.value = valueOrEmpty(state.targets[monthKey(date)] || 0);
@@ -1055,6 +1057,7 @@ function readFormRecord() {
     .filter((expense) => expense.type === "other")
     .reduce((sum, expense) => sum + expense.amount, 0);
   record.memo = els.memo.value.trim();
+  record.weather = readWeatherInput();
   record.sourceData = { ...draftSourceData };
   return record;
 }
@@ -2619,7 +2622,7 @@ function renderInputCalendar(draftRecord = null) {
     const summary = summarizeRecords([source]);
     const hasActivity = summary.sales > 0 || summary.count > 0 || summary.workHours > 0 || summary.expense > 0;
     const dayOfWeek = new Date(`${date}T00:00:00`).getDay();
-    const weather = weatherMark(source.sourceData?.weather);
+    const weather = weatherMark(source.weather ?? source.sourceData?.weather);
     const isSelected = date === state.selectedDate;
     const isToday = date === todayString();
     const classes = [
@@ -2646,6 +2649,34 @@ function renderInputCalendar(draftRecord = null) {
   }
   els.inputCalendarGrid.innerHTML = cells.join("");
   renderInputDayHeading();
+}
+
+/**
+ * 天気の表記を選択肢の5種類へ寄せる。
+ * 取り込み済みのデータには「雲」「くもり」「小雨」などの揺れがあるため、
+ * 記録済みの値を消さずに拾えるようにする。
+ */
+function readWeatherInput() {
+  const checked = document.querySelector('input[name="weather"]:checked');
+  return normalizeWeather(checked ? checked.value : "");
+}
+
+function setWeatherInput(value) {
+  const weather = normalizeWeather(value);
+  document.querySelectorAll('input[name="weather"]').forEach((input) => {
+    input.checked = input.value === weather;
+  });
+}
+
+function normalizeWeather(value) {
+  const weather = typeof value === "string" ? value.trim() : "";
+  if (!weather) return "";
+  if (/雪/.test(weather)) return "雪";
+  if (/雷/.test(weather)) return "雷";
+  if (/雨/.test(weather)) return "雨";
+  if (/曇|くもり|雲/.test(weather)) return "曇";
+  if (/晴/.test(weather)) return "晴";
+  return "";
 }
 
 function weatherMark(value) {
@@ -3537,6 +3568,7 @@ function normalizeRecord(record) {
   normalized.breakHours = numberValue(record.breakHours);
   normalized.vehicleId = typeof record.vehicleId === "string" ? record.vehicleId : "";
   normalized.odometerKm = numberValue(record.odometerKm ?? record.sourceData?.odometerKm);
+  normalized.weather = normalizeWeather(record.weather ?? record.sourceData?.weather);
   normalized.distanceKm = numberValue(record.distanceKm);
   if (Array.isArray(record.expenses)) {
     normalized.expenses = record.expenses
