@@ -2250,10 +2250,12 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
 .input-month-summary div:first-child strong { font-size: clamp(30px, 5vw, 44px); line-height: 1.18; color: var(--ink-strong); }
 .input-calendar-weekdays { font-size: 12px; font-weight: 500; }
 .input-calendar-weekdays span { padding: 6px 0 12px; }
-.input-calendar-grid { border: 0; gap: 3px; }
-.input-calendar-day, .input-calendar-spacer { min-height: 70px; border: 0; border-radius: 10px; background: transparent; }
+/* 日付の区切りは罫線で示す。余白だけだと週と日の境目が読み取りにくい。 */
+.input-calendar-grid { gap: 0; border: 1px solid var(--line); border-width: 1px 0 0 1px; border-radius: 12px; overflow: hidden; }
+.input-calendar-day, .input-calendar-spacer { min-height: 70px; border: 0 solid var(--line); border-width: 0 1px 1px 0; border-radius: 0; background: var(--surface); }
+.input-calendar-spacer { background: var(--surface-soft); }
 .input-calendar-day { padding: 30px 6px 7px; align-items: center; text-align: center; }
-.input-calendar-day.is-selected { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.input-calendar-day.is-selected { z-index: 1; background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
 .input-calendar-day.is-today:not(.is-selected) { background: var(--surface-soft); box-shadow: none; }
 .input-calendar-date { top: 5px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: 600; }
 .input-calendar-day.is-today .input-calendar-date::after { display: block; width: 4px; height: 4px; margin: 1px auto 0; border-radius: 50%; background: var(--accent); content: ""; }
@@ -2369,8 +2371,8 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
   .input-month-summary strong { font-size: 17px; }
   .input-month-summary div:first-child strong { font-size: clamp(28px, 8.5vw, 36px); }
   .input-calendar-weekdays span { padding: 6px 0 10px; }
-  .input-calendar-grid { gap: 2px; }
-  .input-calendar-day, .input-calendar-spacer { min-height: 56px; border-radius: 8px; }
+  .input-calendar-grid { gap: 0; }
+  .input-calendar-day, .input-calendar-spacer { min-height: 56px; border-radius: 0; }
   .input-calendar-day { padding: 28px 1px 5px; }
   .input-calendar-date { top: 3px; left: 50%; font-size: 14px; }
   .input-calendar-weather { top: 5px; right: 1px; font-size: 12px; }
