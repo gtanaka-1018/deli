@@ -51,3 +51,33 @@ test("別日の未保存入力は今日への移動を取り消すと残る", as
   await expect(start).toHaveValue("");
   await expect(page.locator("#recordActionDock")).toBeHidden();
 });
+
+test("読み込み後の起動でもオフラインの準備ができ、保存した記録を開ける", async ({ page, context }) => {
+  await page.goto(APP_URL, { waitUntil: "networkidle" });
+  await page.evaluate(async () => {
+    for (const registration of await navigator.serviceWorker.getRegistrations()) {
+      await registration.unregister();
+    }
+    // 非同期の端末内復元が window.load より遅れて完了する起動経路。
+    registerServiceWorker();
+  });
+  await expect.poll(async () => page.evaluate(async () => {
+    const registration = await navigator.serviceWorker.getRegistration();
+    return registration?.active?.state;
+  })).toBe("activated");
+
+  const start = page.locator('[data-session-field="startTime"]').first();
+  const end = page.locator('[data-session-field="endTime"]').first();
+  await start.fill("0900");
+  await start.blur();
+  await end.fill("1000");
+  await end.blur();
+  await page.locator("#saveRecord").click();
+  await expect(page.locator("#recordActionDock")).toBeHidden();
+
+  await context.setOffline(true);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator("#dailyWorkHours")).toHaveText("1.00h");
+  await expect(start).toHaveValue("0900");
+  await expect(end).toHaveValue("1000");
+});

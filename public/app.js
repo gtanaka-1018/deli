@@ -166,9 +166,12 @@ function updateThemeColorMeta() {
 
 function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
-  window.addEventListener("load", () => {
+  const register = () => {
     navigator.serviceWorker.register("/service-worker.js").catch(() => {});
-  });
+  };
+  // 端末内の記録を非同期で復元する間に load が終わることもある。
+  if (document.readyState === "complete") register();
+  else window.addEventListener("load", register, { once: true });
 }
 
 function bindElements() {
