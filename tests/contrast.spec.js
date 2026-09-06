@@ -141,6 +141,10 @@ for (const scheme of ["light", "dark"]) {
     const found = [];
     for (const screen of SCREENS) {
       await page.locator(`[data-screen="${screen}"]`).click();
+      if (screen === "input") {
+        await page.locator(".daily-details").evaluate((element) => { element.open = true; });
+        await page.locator(".product-about").evaluate((element) => { element.open = true; });
+      }
       await page.waitForTimeout(300);
       const failures = await page.evaluate(MEASURE);
       failures.forEach((failure) => found.push({ screen, ...failure }));

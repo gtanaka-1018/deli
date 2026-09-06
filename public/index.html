@@ -97,42 +97,20 @@
           <img class="welcome-logo" src="/brand-mark.svg" width="68" height="68" alt="" />
           <span class="welcome-chart"><i></i><i></i><i></i><i></i></span>
         </div>
-        <p class="welcome-eyebrow">資産1億円への道を見える化</p>
         <h2 id="welcomeTitle">配達の数字を、<br />迷わず管理。</h2>
-        <p class="welcome-lead">毎日の売上から納税見込みまで、スマホひとつで見通せます。</p>
-
-        <div class="welcome-points">
-          <article>
-            <span aria-hidden="true">＋</span>
-            <div><strong>まずは1日の記録から</strong><small>売上・時間・経費をまとめて保存</small></div>
-          </article>
-          <article>
-            <span aria-hidden="true">⌂</span>
-            <div><strong>ホーム画面に追加</strong><small>Safari・Chromeの共有メニューから追加できます</small></div>
-          </article>
-          <article>
-            <span aria-hidden="true">⇩</span>
-            <div><strong>記録はこの端末内</strong><small>設定からファイル保存とクラウド同期を選べます</small></div>
-          </article>
-        </div>
+        <p class="welcome-lead">売上・時給・1億円までの進捗を、ひと目で。</p>
+        <div class="welcome-chips"><span>無料</span><span>登録不要</span><span>端末内保存</span></div>
+        <details class="welcome-help">
+          <summary>ホーム画面への追加・保存方法</summary>
+          <p>Safari・Chromeの共有やメニューから「ホーム画面に追加」を選びます。</p>
+          <p>記録の控えや端末間の移行は、設定の「ファイル保存・読込」から。</p>
+        </details>
 
         <button class="welcome-start-button" id="welcomeStart" type="button">億メーターをはじめる</button>
         <button class="welcome-close-button" id="welcomeClose" type="button">閉じる</button>
-        <p class="welcome-privacy">会員登録不要・入力した売上や経費の記録は外部へ送信しません</p>
+        <p class="welcome-privacy">クラウド同期は設定から選べます。</p>
       </div>
     </dialog>
-
-    <script>
-      (() => {
-        try {
-          if (localStorage.getItem("deli-onboarding-complete-v1") === "done") return;
-        } catch {
-          // Storage may be unavailable in privacy-restricted browsers.
-        }
-        document.getElementById("welcomeClose").hidden = true;
-        document.getElementById("welcomeDialog").showModal();
-      })();
-    </script>
 
     <div class="app-shell">
       <header class="topbar">
@@ -140,48 +118,51 @@
           <img class="brand-mark" src="/brand-mark.svg" width="38" height="38" alt="" />
           <span class="brand-text">
             <h1>億メーター</h1>
-            <small>配達の記録と税金の見通し</small>
           </span>
         </div>
-        <div class="header-status" aria-label="保存方式">
-          <span class="status-dot"></span>
-          <span id="storageModeLabel">この端末内に保存</span>
+        <div class="header-actions">
+          <div class="header-status" aria-label="保存方式">
+            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg>
+            <span id="storageModeLabel">この端末内に保存</span>
+          </div>
+          <button class="icon-button share-app-button" id="shareApp" type="button" aria-label="億メーターを共有" title="億メーターを共有"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-4 4 4-4 4 4M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
         </div>
       </header>
 
       <nav class="screen-nav" id="primaryNav" aria-label="画面を切り替える">
         <button class="screen-tab active" type="button" data-screen="input" aria-controls="inputScreen" aria-current="page">
-          <span class="screen-tab-icon">＋</span>
-          <span>入力</span>
+          <svg class="screen-tab-icon ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18m-9 3v4m-2-2h4"/></svg>
+          <span>記録</span>
         </button>
         <button class="screen-tab" type="button" data-screen="summary" aria-controls="summaryScreen">
-          <span class="screen-tab-icon">▥</span>
+          <svg class="screen-tab-icon ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3v17h17M9 15V9m5 6V4m5 11v-5"/></svg>
           <span>集計</span>
         </button>
         <button class="screen-tab" type="button" data-screen="meter" aria-controls="meterScreen">
-          <span class="screen-tab-icon">◉</span>
-          <span>メーター</span>
+          <svg class="screen-tab-icon ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 19a10 10 0 1 1 15 0M12 12l4-5"/><circle cx="12" cy="12" r="2"/><path d="M8 20h8"/></svg>
+          <span>資産</span>
         </button>
         <button class="screen-tab" type="button" data-screen="ranking" aria-controls="rankingScreen">
-          <span class="screen-tab-icon">★</span>
+          <svg class="screen-tab-icon ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v6a4 4 0 0 1-8 0V3Zm0 2H4v2a4 4 0 0 0 4 4m8-6h4v2a4 4 0 0 1-4 4m-4 2v5m-4 3h8m-8 0v-3h8v3"/></svg>
           <span>順位</span>
         </button>
         <button class="screen-tab" type="button" data-screen="plan" aria-controls="planScreen">
-          <span class="screen-tab-icon">◎</span>
+          <svg class="screen-tab-icon ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>
           <span>計画</span>
         </button>
         <button class="screen-tab" type="button" data-screen="tax" aria-controls="taxScreen">
-          <span class="screen-tab-icon">￥</span>
-          <span>確定申告</span>
+          <svg class="screen-tab-icon ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2Zm3 4 3 4 3-4m-6 5h6m-6 3h6m-3-4v7"/></svg>
+          <span>税金</span>
         </button>
         <button class="screen-tab" type="button" data-screen="settings" aria-controls="settingsScreen">
-          <span class="screen-tab-icon">⚙</span>
+          <svg class="screen-tab-icon ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3 1-1h4l1 3 3 1 3 1v4l-2 2-1 3v3l-4 2-2-2-3-1H6l-3-3 1-3V9L3 7l3-3 3 1Z"/><circle cx="12" cy="12" r="3"/></svg>
           <span>設定</span>
         </button>
       </nav>
 
       <main class="workspace">
         <section class="app-screen active" id="inputScreen" data-screen-panel="input">
+          <div class="input-screen-heading"><h2>配達の記録</h2><button class="text-button primary" id="recordToday" type="button"><span aria-hidden="true">＋</span> 今日を記録</button></div>
           <section class="input-calendar-panel" id="inputCalendarPanel" aria-label="入力日カレンダー">
             <div class="period-host" id="inputPeriodHost">
               <section class="control-strip" id="periodControls" aria-label="対象期間を選択">
@@ -207,7 +188,7 @@
               </section>
             </div>
             <div class="input-month-summary" aria-label="表示月の集計">
-              <div><span>売上</span><strong id="calendarMonthSales">¥0</strong></div>
+              <div><span>月の売上</span><strong id="calendarMonthSales">¥0</strong></div>
               <div><span>件数</span><strong id="calendarMonthCount">0件</strong></div>
               <div><span>稼働</span><strong id="calendarMonthHours">0h</strong></div>
             </div>
@@ -234,6 +215,15 @@
                 <strong id="dailyCount">0件</strong>
               </div>
               <div>
+                <span>時給</span>
+                <strong id="dailyHourly">¥0</strong>
+              </div>
+            </div>
+
+            <details class="daily-details">
+              <summary>詳しい内訳</summary>
+              <div class="daily-detail-grid">
+              <div>
                 <span>1件単価</span>
                 <strong id="dailyUnitPrice">-</strong>
               </div>
@@ -244,10 +234,6 @@
               <div>
                 <span>稼働時間</span>
                 <strong id="dailyWorkHours">0.00h</strong>
-              </div>
-              <div>
-                <span>時給</span>
-                <strong id="dailyHourly">¥0</strong>
               </div>
               <div>
                 <span>経費</span>
@@ -261,13 +247,13 @@
                 <span>km単価（売上）</span>
                 <strong id="dailyKmUnit">-</strong>
               </div>
-            </div>
+              </div>
+            </details>
 
             <div class="input-section service-picker-block">
               <div class="field-section-heading">
                 <div>
-                  <span class="section-step">1</span>
-                  <strong>プラットフォーム</strong>
+                  <strong>売上を入力</strong>
                 </div>
               </div>
               <div class="service-picker" id="servicePicker" aria-label="プラットフォームを選択"></div>
@@ -276,7 +262,6 @@
             <div class="input-section work-session-field">
               <div class="field-section-heading">
                 <div>
-                  <span class="section-step">2</span>
                   <strong>稼働時間帯</strong>
                 </div>
                 <button class="text-button muted" id="addWorkSession" type="button">＋ 時間帯を追加</button>
@@ -288,7 +273,6 @@
             <div class="input-section expense-field">
               <div class="field-section-heading">
                 <div>
-                  <span class="section-step">3</span>
                   <strong>経費</strong>
                 </div>
                 <button class="text-button expense-add-button" id="addExpense" type="button">＋ 経費を追加</button>
@@ -1005,36 +989,18 @@
           </section>
         </section>
 
-        <section class="product-discovery" aria-labelledby="productDiscoveryTitle">
-          <div class="product-discovery-heading">
-            <span>無料・会員登録不要</span>
+        <section class="product-discovery" aria-label="億メーターについて">
+          <div class="product-shortcuts">
+            <button type="button" data-open-screen="input">配達を記録</button>
+            <button type="button" data-open-screen="summary">集計を見る</button>
+            <button type="button" data-open-screen="tax">税額の目安</button>
+          </div>
+          <details class="product-about">
+            <summary>億メーターについて <span>無料・登録不要</span></summary>
             <h2 id="productDiscoveryTitle">フードデリバリーの売上・経費・税金を、ひとつの画面で</h2>
-            <p>Uber Eats、出前館、Wolt、Rocket Nowなどの配達記録を日ごとにまとめ、売上だけでは見えにくい手残りと働き方を確認できます。</p>
-          </div>
-          <div class="product-feature-grid">
-            <article>
-              <span aria-hidden="true">01</span>
-              <h3>本当の時給を把握</h3>
-              <p>配達件数、売上、稼働時間、休憩を記録し、1件単価と時間帯別の傾向を自動集計します。</p>
-              <button type="button" data-open-screen="input">今日の配達を記録する</button>
-            </article>
-            <article>
-              <span aria-hidden="true">02</span>
-              <h3>ガソリン代まで反映</h3>
-              <p>給油やメンテナンスなどの経費と走行距離を残し、利益や売上1km単価を見える化します。</p>
-              <button type="button" data-open-screen="summary">集計を見る</button>
-            </article>
-            <article>
-              <span aria-hidden="true">03</span>
-              <h3>納税の準備を早めに</h3>
-              <p>専業・会社員の副業を選び、年間の記録から所得税・住民税などの見込み額を概算できます。</p>
-              <button type="button" data-open-screen="tax">税額の目安を見る</button>
-            </article>
-          </div>
-          <div class="product-discovery-note">
-            <p><strong>入力内容はこの端末内だけに保存。</strong>設定からログインすると、スマートフォンとPCのクラウド同期を任意で有効にできます。税額は納税準備用の概算です。</p>
-            <button class="product-share-button" id="shareApp" type="button">億メーターを共有</button>
-          </div>
+            <p>Uber Eats、出前館、Wolt、Rocket Nowなどの売上・経費・稼働時間を記録。時給や手残り、資産1億円までの進捗を確認できます。</p>
+            <p>既定では入力内容はこの端末内だけに保存。クラウド同期は設定から任意で有効にできます。税額は概算です。</p>
+          </details>
         </section>
       </main>
 

@@ -94,7 +94,6 @@ async function startApp() {
   render({ shouldPersist: false });
   registerServiceWorker();
   setupTheme();
-  setupWelcomeGuide();
   if ("requestIdleCallback" in window) window.requestIdleCallback(prepareStorageSafetyNet, { timeout: 2000 });
   else setTimeout(prepareStorageSafetyNet, 0);
 }
@@ -430,7 +429,7 @@ function bindEvents() {
       }
       currentScreen = tab.dataset.screen;
       render();
-      if (currentScreen === "meter") window.scrollTo({ top: 0, behavior: "auto" });
+      window.scrollTo({ top: 0, behavior: "auto" });
     });
   });
 
@@ -443,6 +442,16 @@ function bindEvents() {
     });
   });
   els.shareApp.addEventListener("click", shareApp);
+  document.getElementById("recordToday").addEventListener("click", () => {
+    if (state.selectedDate !== todayString()) {
+      if (!confirmDiscardDraft()) return;
+      state.selectedDate = todayString();
+      fillFormForDate(state.selectedDate);
+      render();
+    }
+    els.inputDayHeading.scrollIntoView({ block: "start", behavior: "auto" });
+    els.servicePicker.querySelector("button")?.focus({ preventScroll: true });
+  });
 
   document.querySelectorAll(".view-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
@@ -2045,14 +2054,6 @@ async function shareApp() {
   }
 }
 
-function setupWelcomeGuide() {
-  try {
-    if (localStorage.getItem(ONBOARDING_KEY) !== "done") openWelcomeGuide(false);
-  } catch {
-    openWelcomeGuide(false);
-  }
-}
-
 function openWelcomeGuide(manual = false) {
   els.welcomeDialog.dataset.manual = manual ? "true" : "false";
   els.welcomeClose.hidden = !manual;
@@ -2572,14 +2573,16 @@ function renderDailyPreview() {
 function renderInputDayHeading(status = formDirty ? "dirty" : "saved") {
   if (!els.inputDayHeading || currentScreen !== "input") return;
   const date = new Date(`${state.selectedDate}T00:00:00`);
-  els.inputDayHeading.textContent = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日（${weekdayLabel(state.selectedDate)}）`;
+  const yearLabel = date.getFullYear() === new Date().getFullYear() ? "" : `${date.getFullYear()}年`;
+  els.inputDayHeading.textContent = `${yearLabel}${date.getMonth() + 1}月${date.getDate()}日（${weekdayLabel(state.selectedDate)}）`;
   const messages = {
-    dirty: "編集中・保存するとカレンダーへ反映",
-    saving: "この端末内へ保存中…",
+    dirty: "未保存",
+    saving: "保存中…",
     error: "保存できませんでした",
   };
   els.inputDayCaption.textContent = messages[status]
-    || (state.records[state.selectedDate] ? "保存済みの配達記録" : "未入力・下の項目から記録できます");
+    || (state.records[state.selectedDate] ? "保存済み" : "未入力");
+  els.inputDayCaption.dataset.state = status;
 }
 
 function renderInputCalendar(draftRecord = null) {
@@ -2599,7 +2602,8 @@ function renderInputCalendar(draftRecord = null) {
   els.calendarMonthHours.textContent = formatDuration(monthSummary.workHours);
 
   const cells = [];
-  for (let index = 0; index < 42; index += 1) {
+  const calendarCells = Math.ceil((leadingDays + daysInMonth) / 7) * 7;
+  for (let index = 0; index < calendarCells; index += 1) {
     const day = index - leadingDays + 1;
     if (day < 1 || day > daysInMonth) {
       cells.push('<span class="input-calendar-spacer" aria-hidden="true"></span>');

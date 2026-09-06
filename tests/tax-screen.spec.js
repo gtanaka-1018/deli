@@ -25,13 +25,11 @@ test("確定申告画面をスマホ幅で操作できる", async ({ page }) => 
   });
   await page.goto(process.env.DELILOG_TEST_URL || "https://okumeter.com", { waitUntil: "networkidle" });
 
-  await expect(page.locator("#welcomeDialog")).toBeVisible();
-  await expect(page.locator("#welcomeDialog")).toContainText("配達の数字を、迷わず管理。");
+  await expect(page.locator("#welcomeDialog")).not.toBeVisible();
+  await expect(page.locator("#recordToday")).toBeVisible();
   if (process.env.DELILOG_WELCOME_SCREENSHOT) {
     await page.screenshot({ path: process.env.DELILOG_WELCOME_SCREENSHOT, fullPage: true });
   }
-  await page.locator("#welcomeStart").click();
-
   await page.locator('[data-screen="tax"]').click();
   await expect(page.locator("#taxScreen")).toBeVisible();
   await expect(page.getByRole("heading", { name: "確定申告・納税見込み" })).toBeVisible();
