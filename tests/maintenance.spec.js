@@ -124,6 +124,7 @@ test("車体別に追加・編集・削除し、再読込と復元で整備履�
   await page.locator("#maintenanceSave").click();
   await expect(page.locator("#maintenanceDialog")).toBeHidden();
   await expect(page.locator("#maintenanceHistory")).toContainText("15,000.5 km");
+  await page.locator("#maintenanceHistory summary").click();
   await page.locator("[data-maintenance-edit]").click();
   await page.locator("#maintenanceDescription").fill("オイル・フィルター交換");
   await page.locator("#maintenanceSave").click();
@@ -138,6 +139,7 @@ test("車体別に追加・編集・削除し、再読込と復元で整備履�
   await expect(page.locator("#maintenanceHistory")).not.toContainText("オイル");
   await page.locator('[data-garage-vehicle="bike-1"]').click();
   page.once("dialog", (dialog) => dialog.accept());
+  await page.locator("#maintenanceHistory summary").click();
   await page.locator("[data-maintenance-delete]").click();
   await expect(page.locator("#maintenanceCount")).toHaveText("0件");
   await page.locator('[data-screen="settings"]').click();
@@ -197,6 +199,7 @@ test("JSON出力・読込・同期スナップショットが整備履歴を保�
 
 test("保存失敗時も下書きと保存済みの履歴を残す", async ({ page }) => {
   await open(page, [entry()]);
+  await page.locator("#maintenanceHistory summary").click();
   await page.locator("[data-maintenance-edit]").click();
   await page.locator("#maintenanceDescription").fill("編集後の内容");
   await page.evaluate(() => {
@@ -215,6 +218,7 @@ test("保存失敗時も下書きと保存済みの履歴を残す", async ({ pa
 
 test("編集中に同期で変更された履歴を上書きせず、入力を残す", async ({ page }) => {
   await open(page, [entry()]);
+  await page.locator("#maintenanceHistory summary").click();
   await page.locator("[data-maintenance-edit]").click();
   await page.locator("#maintenanceDescription").fill("この端末の編集中の内容");
   await page.evaluate(async (remote) => {

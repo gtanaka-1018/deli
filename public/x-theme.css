@@ -2583,16 +2583,19 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
 .maintenance-history-heading h3 { margin: 0; font-size: 16px; }
 .maintenance-history-heading > span { color: var(--muted); font-size: 12px; }
 .maintenance-history { margin-top: 12px; }
-.maintenance-entry { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 20px 0 20px 22px; border-bottom: 1px solid var(--line-soft); }
-.maintenance-entry::before { position: absolute; left: 4px; top: 28px; bottom: -28px; width: 1px; background: var(--line); content: ""; }
-.maintenance-entry:last-child::before { display: none; }
-.maintenance-timeline-dot { position: absolute; top: 27px; left: 0; width: 9px; height: 9px; border: 2px solid var(--accent-text); border-radius: 50%; background: var(--surface); }
-.maintenance-entry-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px 12px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
-.maintenance-entry-meta time { color: var(--accent-text); font-weight: 650; }
-.maintenance-entry h4 { margin: 10px 0 0; color: var(--ink); font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
-.maintenance-entry p { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
-.maintenance-entry-actions { display: flex; align-items: start; gap: 4px; }
-.maintenance-entry-actions .text-button { min-width: 44px; padding: 8px; border-radius: 10px; font-size: 12px; }
+.maintenance-table { width: 100%; border-collapse: collapse; table-layout: fixed; color: var(--ink); font-size: 13px; line-height: 1.7; }
+.maintenance-date-column { width: 22%; }
+.maintenance-km-column { width: 23%; }
+.maintenance-table th { padding: 12px 10px; border-block: 1px solid var(--line); background: var(--surface-soft); color: var(--muted); font-size: 12px; font-weight: 600; text-align: left; }
+.maintenance-table td { padding: 14px 10px; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: anywhere; }
+.maintenance-table .maintenance-date-cell { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.maintenance-table .maintenance-km-cell { font-variant-numeric: tabular-nums; }
+.maintenance-details summary { color: var(--ink); font-weight: 600; cursor: pointer; }
+.maintenance-details summary::marker { color: var(--muted); font-size: 10px; }
+.maintenance-details summary:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+.maintenance-details p { margin: 10px 0; color: var(--muted); font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.maintenance-entry-actions { display: flex; flex-wrap: wrap; align-items: start; gap: 4px; margin-top: 6px; }
+.maintenance-entry-actions .text-button { min-width: 44px; min-height: 36px; padding: 6px; border-radius: 8px; font-size: 12px; }
 .maintenance-empty { padding: 35px 10px; color: var(--muted); text-align: center; }
 .maintenance-empty > span { display: grid; place-items: center; width: 50px; height: 50px; margin: 0 auto 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-soft); color: var(--accent-text); font-size: 24px; }
 .maintenance-empty strong { display: block; color: var(--ink); font-size: 14px; }
@@ -2677,8 +2680,11 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
   .garage-vehicle-copy > span { display: inline; }
   .maintenance-stats { gap: 10px; margin-block: 20px; }
   .maintenance-stats strong { font-size: 16px; }
-  .maintenance-entry { grid-template-columns: 1fr; gap: 8px; }
-  .maintenance-entry-actions { justify-content: flex-end; }
+  .maintenance-date-column { width: 29%; }
+  .maintenance-km-column { width: 25%; }
+  .maintenance-table { font-size: 12px; }
+  .maintenance-table th, .maintenance-table td { padding: 12px 6px; }
+  .maintenance-table .maintenance-date-cell, .maintenance-table .maintenance-km-cell { font-size: 11px; }
   .maintenance-vehicle-heading h3 { font-size: 23px; }
   .maintenance-dialog { width: 100%; max-height: 92dvh; margin-bottom: 0; border-radius: 22px 22px 0 0; }
   .maintenance-dialog .dialog-card { padding: 22px 18px; }

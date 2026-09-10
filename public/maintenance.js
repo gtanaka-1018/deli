@@ -181,12 +181,16 @@
     readings.sort((a, b) => b.date.localeCompare(a.date) || b.km - a.km);
     el.maintenanceLatestKm.textContent = readings[0] ? `${number(readings[0].km)} km` : "—";
     el.maintenanceLatestKm.title = readings[0] ? `${dateLabel(readings[0].date)}の記録` : "";
-    el.maintenanceHistory.innerHTML = entries.length ? entries.map((entry) => `<article class="maintenance-entry">
-      <span class="maintenance-timeline-dot" aria-hidden="true"></span>
-      <div class="maintenance-entry-body"><div class="maintenance-entry-meta"><time datetime="${entry.date}">${dateLabel(entry.date)}</time><span>${entry.odometerKm === null ? "走行距離 未記録" : `${number(entry.odometerKm)} km`}</span></div>
-      <h4>${escape(entry.description)}</h4>${entry.memo ? `<p>${escape(entry.memo)}</p>` : ""}</div>
-      <div class="maintenance-entry-actions"><button type="button" class="text-button muted" data-maintenance-edit="${escape(entry.id)}" aria-label="${escape(`${dateLabel(entry.date)} ${entry.description}を編集`)}">編集</button><button type="button" class="text-button danger" data-maintenance-delete="${escape(entry.id)}" aria-label="${escape(`${dateLabel(entry.date)} ${entry.description}を削除`)}">削除</button></div>
-    </article>`).join("") : `<div class="maintenance-empty"><span aria-hidden="true">◇</span><strong>${vehicle ? "最初の整備を記録しましょう" : "相棒のケアを、ひとつの場所に"}</strong><p>オイル交換や点検の履歴を残して、<br>次の整備にも役立てましょう。</p></div>`;
+    el.maintenanceHistory.innerHTML = entries.length ? `<table class="maintenance-table" aria-label="${escape(vehicle.label)}の整備履歴">
+      <colgroup><col class="maintenance-date-column"><col class="maintenance-km-column"><col></colgroup>
+      <thead><tr><th scope="col" aria-sort="descending">日付</th><th scope="col">走行距離</th><th scope="col">整備内容</th></tr></thead>
+      <tbody>${entries.map((entry) => `<tr>
+        <td class="maintenance-date-cell"><time datetime="${entry.date}">${dateLabel(entry.date)}</time></td>
+        <td class="maintenance-km-cell">${entry.odometerKm === null ? "未記録" : `${number(entry.odometerKm)} km`}</td>
+        <td><details class="maintenance-details"><summary>${escape(entry.description)}</summary>
+        ${entry.memo ? `<p>${escape(entry.memo)}</p>` : ""}
+        <div class="maintenance-entry-actions"><button type="button" class="text-button muted" data-maintenance-edit="${escape(entry.id)}" aria-label="${escape(`${dateLabel(entry.date)} ${entry.description}を編集`)}">編集</button><button type="button" class="text-button danger" data-maintenance-delete="${escape(entry.id)}" aria-label="${escape(`${dateLabel(entry.date)} ${entry.description}を削除`)}">削除</button></div></details></td>
+      </tr>`).join("")}</tbody></table>` : `<div class="maintenance-empty"><span aria-hidden="true">◇</span><strong>${vehicle ? "最初の整備を記録しましょう" : "相棒のケアを、ひとつの場所に"}</strong><p>オイル交換や点検の履歴を残して、<br>次の整備にも役立てましょう。</p></div>`;
   }
 
   function values() {
