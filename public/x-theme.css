@@ -2491,3 +2491,170 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+.calendar-payout-summary {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: -8px 4px 18px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.calendar-payout-summary strong { color: var(--ink); font-size: 17px; }
+.calendar-payout-summary small { font-size: 11px; }
+.input-calendar-payout, .input-calendar-payout-only { display: block; color: var(--accent-text); font-size: 10px; line-height: 1.3; }
+.payout-note, .payout-empty { margin: 8px 0 12px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.payout-empty { margin-bottom: 0; }
+.payout-item { grid-template-columns: minmax(0, 1fr) auto 16px; }
+.payout-item .expense-item-copy small { white-space: normal; overflow-wrap: anywhere; }
+.payout-report { margin: 20px 0; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.payout-report-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; }
+.payout-report-heading h3 { margin: 0; font-size: 16px; }
+.payout-report-total { color: var(--ink); font-size: 24px; font-variant-numeric: tabular-nums; }
+.payout-provider-list { margin: 12px 0 0; }
+.payout-provider-list > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.payout-provider-list dt { overflow-wrap: anywhere; font-size: 14px; }
+.payout-provider-list dt small { margin-left: 10px; color: var(--muted); font-size: 12px; }
+.payout-provider-list dd { margin: 0; font-weight: 650; font-variant-numeric: tabular-nums; }
+.payout-history { margin-top: 8px; }
+.payout-history summary { padding: 8px 0; color: var(--accent-text); cursor: pointer; font-size: 13px; }
+.payout-history-list { max-height: 420px; overflow-y: auto; }
+.payout-history-item { display: grid; grid-template-columns: minmax(0, 1fr) auto 12px; align-items: center; gap: 12px; width: 100%; padding: 12px 0; border: 0; border-top: 1px solid var(--line); background: var(--surface); color: var(--ink); text-align: left; }
+.payout-history-item:hover { background: var(--surface-soft); }
+.payout-history-item > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.payout-history-item small, .payout-history-item span strong { display: block; }
+.payout-history-item small { color: var(--muted); font-size: 12px; line-height: 1.6; }
+.payout-history-item strong { font-size: 14px; }
+.payout-history-item:focus-visible, .payout-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (max-width: 480px) {
+  .payout-report { padding: 14px; }
+  .payout-report-total { font-size: 22px; }
+  .payout-history-item { gap: 8px; }
+}
+
+/* 配達の記録・収益・車両管理に共通するカード構成。配色は theme.css に集約する。 */
+.screen-eyebrow { margin: 0 0 7px; color: var(--muted); font-size: 12px; font-weight: 500; line-height: 1.6; }
+.screen-nav { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+.screen-tab.active { color: var(--accent-text); }
+.brand-text small { font-size: 11px; font-weight: 500; }
+.panel, .metric-tile, .chart-panel { box-shadow: var(--shadow); }
+.screen-heading-panel { background: transparent; border: 0; margin-bottom: 18px; }
+.input-calendar-panel { background: var(--surface); box-shadow: var(--shadow); }
+.input-month-summary { padding: 16px; border: 1px solid var(--accent-border); border-radius: 14px; background: linear-gradient(120deg, var(--accent-soft), var(--surface)); }
+.input-month-summary div:first-child strong { color: var(--accent-text); }
+.input-screen-heading { width: 100%; }
+.metrics-grid { gap: 14px; }
+.metric-tile { position: relative; padding: 22px 20px; border: 1px solid var(--line); border-radius: 18px; }
+.metric-tile > span { display: block; margin-bottom: 9px; color: var(--muted); font-size: 13px; }
+.metric-tile strong { font-size: clamp(26px, 3vw, 36px); font-weight: 750; font-variant-numeric: tabular-nums; }
+.metric-tile::before { position: absolute; top: 22px; right: 18px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-text); content: ""; }
+.metric-tile.accent-green::before { background: var(--green); }
+.metric-tile.accent-amber::before { background: var(--amber); }
+.metric-tile.accent-red::before { background: var(--red); }
+.report-panel { padding: 24px; }
+.maintenance-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; }
+.maintenance-heading h2 { margin: 0; color: var(--ink-strong); font-size: 26px; letter-spacing: -0.04em; }
+.maintenance-heading button { flex-shrink: 0; }
+.garage-layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 20px; align-items: start; }
+.garage-panel, .maintenance-panel { min-width: 0; padding: 22px; }
+.garage-panel .panel-heading { flex-direction: row; align-items: center; margin-bottom: 18px; }
+.garage-panel h3 { margin: 0; font-size: 15px; }
+.garage-count { padding: 4px 9px; border-radius: 8px; background: var(--surface-soft); color: var(--muted); font-size: 12px; }
+.garage-vehicles { display: grid; gap: 10px; }
+.garage-vehicle { display: flex; align-items: center; gap: 12px; width: 100%; padding: 16px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); text-align: left; }
+.garage-vehicle.selected { border-color: var(--accent-border); background: var(--accent-soft); }
+.garage-vehicle:hover { border-color: var(--accent); }
+.garage-vehicle-icon { display: grid; place-items: center; flex: 0 0 38px; height: 42px; border-radius: 10px; background: var(--surface-soft); font-size: 23px; }
+.garage-vehicle-copy { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.garage-vehicle-copy strong { display: block; margin-bottom: 5px; font-size: 14px; }
+.garage-vehicle-copy small, .garage-vehicle-copy > span { display: block; color: var(--muted); font-size: 11px; line-height: 1.8; }
+.garage-vehicle-arrow { color: var(--accent-text); font-size: 22px; }
+.maintenance-vehicle-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.maintenance-vehicle-heading > div { min-width: 0; }
+.maintenance-vehicle-heading h3 { margin: 0; color: var(--ink-strong); font-size: 26px; overflow-wrap: anywhere; }
+.maintenance-vehicle-heading button { flex-shrink: 0; }
+.maintenance-stats { display: grid; grid-template-columns: .7fr 1fr 1fr; gap: 12px; margin: 24px 0 28px; padding: 18px 0; border-block: 1px solid var(--line); }
+.maintenance-stats span { display: block; margin-bottom: 8px; color: var(--muted); font-size: 11px; }
+.maintenance-stats strong { color: var(--ink); font-size: clamp(16px, 1.6vw, 21px); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.maintenance-history-heading { display: flex; align-items: baseline; justify-content: space-between; }
+.maintenance-history-heading h3 { margin: 0; font-size: 16px; }
+.maintenance-history-heading > span { color: var(--muted); font-size: 12px; }
+.maintenance-history { margin-top: 12px; }
+.maintenance-entry { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 20px 0 20px 22px; border-bottom: 1px solid var(--line-soft); }
+.maintenance-entry::before { position: absolute; left: 4px; top: 28px; bottom: -28px; width: 1px; background: var(--line); content: ""; }
+.maintenance-entry:last-child::before { display: none; }
+.maintenance-timeline-dot { position: absolute; top: 27px; left: 0; width: 9px; height: 9px; border: 2px solid var(--accent-text); border-radius: 50%; background: var(--surface); }
+.maintenance-entry-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px 12px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.maintenance-entry-meta time { color: var(--accent-text); font-weight: 650; }
+.maintenance-entry h4 { margin: 10px 0 0; color: var(--ink); font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
+.maintenance-entry p { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.maintenance-entry-actions { display: flex; align-items: start; gap: 4px; }
+.maintenance-entry-actions .text-button { min-width: 44px; padding: 8px; border-radius: 10px; font-size: 12px; }
+.maintenance-empty { padding: 35px 10px; color: var(--muted); text-align: center; }
+.maintenance-empty > span { display: grid; place-items: center; width: 50px; height: 50px; margin: 0 auto 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-soft); color: var(--accent-text); font-size: 24px; }
+.maintenance-empty strong { display: block; color: var(--ink); font-size: 14px; }
+.maintenance-empty p { margin: 10px 0 0; font-size: 12px; line-height: 1.9; }
+.maintenance-dialog { width: min(520px, calc(100% - 32px)); }
+.maintenance-dialog .dialog-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 14px; }
+.maintenance-dialog label { min-width: 0; }
+.maintenance-dialog label:has(#maintenanceDescription), .maintenance-dialog label:has(#maintenanceMemo), .maintenance-presets { grid-column: 1 / -1; }
+.maintenance-dialog input, .maintenance-dialog select, .maintenance-dialog textarea { width: 100%; min-width: 0; box-sizing: border-box; }
+.maintenance-dialog textarea { padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; resize: vertical; }
+.maintenance-presets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -8px; }
+.maintenance-presets button { min-height: 36px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-soft); color: var(--ink); font-size: 12px; }
+.maintenance-presets button:hover { border-color: var(--accent); color: var(--accent-text); }
+.maintenance-form-note { color: var(--muted); font-size: 12px; line-height: 1.7; }
+.maintenance-error { padding: 12px; border-radius: 10px; background: var(--red-soft); color: var(--red); font-size: 13px; line-height: 1.6; }
+#addMaintenance:disabled { background: var(--surface-strong); color: var(--muted); cursor: default; }
+
+@media (min-width: 1000px) {
+  .app-shell { grid-template-columns: 190px minmax(0, 1fr); max-width: 1320px; column-gap: 32px; }
+  .screen-nav { grid-template-columns: 1fr; gap: 8px; }
+  .screen-tab { min-height: 52px; border-radius: 12px; font-size: 15px; }
+  .screen-tab.active { color: var(--accent-text); background: var(--accent-soft); box-shadow: inset 3px 0 var(--accent); }
+  .topbar { padding-block: 20px; background: var(--topbar-bg); }
+  .workspace { margin-top: 30px; }
+  .record-action-dock { right: max(32px, calc((100vw - 1272px) / 2)); }
+}
+
+@media (max-width: 900px) {
+  .garage-layout { grid-template-columns: 1fr; }
+  .garage-vehicles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .garage-vehicles > .maintenance-empty { grid-column: 1 / -1; }
+}
+
+@media (max-width: 620px) {
+  .screen-nav { grid-template-columns: repeat(8, minmax(44px, 1fr)); overflow-x: auto; }
+  .screen-tab { font-size: 11px; }
+  .screen-tab.active { color: var(--accent-text); }
+  .screen-eyebrow { font-size: 11px; margin-bottom: 5px; }
+  .input-screen-heading { flex-wrap: wrap; }
+  .input-screen-heading h2 { font-size: 22px; }
+  .input-calendar-panel { width: 100%; margin: 0 0 18px; padding: 10px 10px 14px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+  .input-month-summary { padding: 14px; margin: 12px 0 16px; gap: 12px 20px; }
+  .input-month-summary div:first-child strong { font-size: 32px; }
+  #inputScreen .input-panel { width: 100%; margin: 0; padding: 20px 14px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+  .metrics-grid { gap: 10px; }
+  .metric-tile { padding: 18px 14px; border-radius: 15px; }
+  .metric-tile strong { font-size: 27px; }
+  .metric-tile::before { right: 14px; top: 22px; }
+  .report-panel { padding: 16px; }
+  .maintenance-heading { margin: 24px 0 18px; gap: 10px; flex-wrap: wrap; }
+  .maintenance-heading h2 { font-size: 22px; }
+  .maintenance-heading button { font-size: 12px; padding-inline: 12px; }
+  .garage-layout { gap: 16px; }
+  .garage-panel, .maintenance-panel { padding: 16px; }
+  .garage-vehicles { grid-template-columns: 1fr; gap: 8px; }
+  .garage-vehicle { padding: 12px; }
+  .garage-vehicle-copy > span { display: inline; }
+  .maintenance-stats { gap: 10px; margin-block: 20px; }
+  .maintenance-stats strong { font-size: 16px; }
+  .maintenance-entry { grid-template-columns: 1fr; gap: 8px; }
+  .maintenance-entry-actions { justify-content: flex-end; }
+  .maintenance-vehicle-heading h3 { font-size: 23px; }
+  .maintenance-dialog { width: 100%; max-height: 92dvh; margin-bottom: 0; border-radius: 22px 22px 0 0; }
+  .maintenance-dialog .dialog-card { padding: 22px 18px; }
+}

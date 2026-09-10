@@ -311,7 +311,7 @@
     }
 
     // 別のアカウントの記録がこの端末に残っている間は、送信も自動取り込みもしない。
-    if (settings.userId && settings.userId !== session.user.id && window.DeliSyncData?.getRecordCount() > 0) {
+    if (settings.userId && settings.userId !== session.user.id && window.DeliSyncData?.hasLocalData()) {
       ownerMismatch = true;
       renderOwnerMismatch();
       return;
@@ -486,7 +486,7 @@
     elements.conflict.hidden = false;
     elements.keepLocal.hidden = true;
     elements.keepRemote.textContent = "クラウドの内容を取り込む";
-    elements.conflictDetail.textContent = `この端末には別のアカウントで入力された記録が${formatNumber(window.DeliSyncData?.getRecordCount() || 0)}日分残っています。安全のため、この端末の内容をクラウドへ送ることはできません。クラウドの内容を取り込むか、同期を止めて先にファイル保存をしてください。取り込む前の内容は端末内の復元ポイントに残します。`;
+    elements.conflictDetail.textContent = "この端末には別のアカウントで入力された売上・整備などの記録が残っています。安全のため、この端末の内容をクラウドへ送ることはできません。クラウドの内容を取り込むか、同期を止めて先にファイル保存をしてください。取り込む前の内容は端末内の復元ポイントに残します。";
     setStatus("別のアカウントの記録がこの端末に残っています", "error");
   }
 

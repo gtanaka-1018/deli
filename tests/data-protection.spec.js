@@ -183,7 +183,7 @@ test("表示テーマを選ぶと再読み込み後も保たれる", async ({ pa
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 
   const painted = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  expect(painted).toBe("rgb(0, 0, 0)");
+  expect(painted).toBe("rgb(11, 17, 27)");
 
   await page.locator('[data-screen="settings"]').click();
   await page.locator('[data-theme-choice="system"]').click();

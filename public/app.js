@@ -2,7 +2,7 @@ const STORAGE_KEY = "deli-sales-tracker-v1";
 const ONBOARDING_KEY = "deli-onboarding-complete-v1";
 const LAST_BACKUP_KEY = "deli-last-backup-v1";
 // 保存データの形式が変わったときに上げる。読み込み側は未知の版数でも壊さず読む。
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 4;
 const THEME_KEY = "deli-theme-v1";
 // 同期していない状態の保存先表示。クラウド同期が動き出したら上書きされる。
 const DEFAULT_STORAGE_MODE_LABEL = "この端末内だけに保存";
@@ -51,6 +51,7 @@ const state = {
   targets: {},
   providers: DEFAULT_PROVIDERS.map((provider) => ({ ...provider })),
   vehicles: [],
+  maintenance: [],
   lastVehicleId: "",
   taxProfiles: {},
   assets: defaultAssetValues(),
@@ -64,6 +65,9 @@ let currentScreen = "input";
 let draftExpenses = [];
 let editingExpenseIndex = -1;
 let expenseDialogTrigger = null;
+let draftPayouts = [];
+let editingPayoutIndex = -1;
+let payoutDialogTrigger = null;
 let formDirty = false;
 let formRevision = 0;
 let draftSourceData = {};
@@ -88,6 +92,22 @@ async function startApp() {
   bindElements();
   await loadState();
   bindEvents();
+  window.DeliMaintenanceUI.init({
+    getState: () => state,
+    today: todayString,
+    openVehicle: (trigger) => openVehicleDialog("", trigger),
+    save: async (entries) => {
+      const previous = state.maintenance;
+      state.maintenance = window.DeliMaintenanceData.normalize(entries);
+      try { await persist(); }
+      catch (error) { state.maintenance = previous; throw error; }
+    },
+    beforeDelete: async () => {
+      const point = await window.DeliVault?.saveRestorePoint(snapshotState(), "before-maintenance-delete");
+      if (!point) throw new Error("Unable to save restore point");
+    },
+    notify: showToast,
+  });
   applyRequestedScreen();
   state.selectedDate = todayString();
   fillFormForDate(state.selectedDate);
@@ -202,6 +222,20 @@ function bindElements() {
     "calendarMonthSales",
     "calendarMonthCount",
     "calendarMonthHours",
+    "calendarMonthPayouts",
+    "payoutTotal",
+    "payoutList",
+    "addPayout",
+    "payoutDialog",
+    "payoutDialogForm",
+    "payoutDialogTitle",
+    "payoutDialogDate",
+    "payoutDialogClose",
+    "payoutDialogCancel",
+    "payoutDialogDelete",
+    "payoutProvider",
+    "payoutAmount",
+    "payoutMemo",
     "inputDayHeading",
     "inputDayCaption",
     "metricSales",
@@ -586,6 +620,33 @@ function bindEvents() {
   els.expenseFuelLiters.addEventListener("input", updateExpenseGasUnitPreview);
   els.expenseMemo.addEventListener("input", () => els.expenseMemo.setCustomValidity(""));
 
+  els.addPayout.addEventListener("click", () => openPayoutDialog(-1, els.addPayout));
+  els.payoutList.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-edit-payout]");
+    if (button) openPayoutDialog(Number(button.dataset.editPayout), button);
+  });
+  els.payoutDialogForm.addEventListener("submit", applyPayoutDialog);
+  els.payoutDialogDelete.addEventListener("click", deletePayoutFromDialog);
+  [els.payoutDialogClose, els.payoutDialogCancel].forEach((button) => {
+    button.addEventListener("click", () => els.payoutDialog.close());
+  });
+  els.payoutDialog.addEventListener("click", (event) => {
+    if (event.target === els.payoutDialog) els.payoutDialog.close();
+  });
+  els.payoutDialog.addEventListener("close", () => {
+    const trigger = payoutDialogTrigger?.isConnected ? payoutDialogTrigger : els.addPayout;
+    trigger?.focus();
+    payoutDialogTrigger = null;
+    editingPayoutIndex = -1;
+  });
+  els.payoutAmount.addEventListener("input", () => els.payoutAmount.setCustomValidity(""));
+  [els.weekReport, els.monthReport, els.yearReport].forEach((report) => {
+    report.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-jump-date]");
+      if (button) jumpToInputDate(button.dataset.jumpDate);
+    });
+  });
+
   els.addWorkSession.addEventListener("click", addWorkSession);
   els.workSessions.addEventListener("click", (event) => {
     const button = event.target.closest("[data-remove-session]");
@@ -691,6 +752,7 @@ function schedulePersist() {
 
 function snapshotState() {
   return {
+    schemaVersion: SCHEMA_VERSION,
     view: state.view,
     selectedDate: state.selectedDate,
     taxYear: state.taxYear,
@@ -698,6 +760,7 @@ function snapshotState() {
     targets: state.targets,
     providers: state.providers,
     vehicles: state.vehicles,
+    maintenance: state.maintenance,
     lastVehicleId: state.lastVehicleId,
     taxProfiles: state.taxProfiles,
     assets: state.assets,
@@ -748,12 +811,13 @@ window.DeliSyncData = Object.freeze({
   getSnapshot: () => snapshotState(),
   getSchemaVersion: () => SCHEMA_VERSION,
   getRecordCount: () => Object.keys(state.records).length,
+  hasLocalData: () => Object.keys(state.records).length > 0 || state.maintenance.length > 0,
   isSaveBlocked: () => saveBlockedReason !== "",
   saveRestorePoint: (reason) => window.DeliVault?.saveRestorePoint(snapshotState(), reason),
   /** クラウドから取り込んだ内容を端末へ反映する。取り込み前の状態は復元ポイントへ残す。 */
   applyRemoteSnapshot: async (snapshot) => {
     if (!isPlainObject(snapshot)) throw new Error("Invalid snapshot");
-    if (Object.keys(state.records).length > 0) {
+    if (Object.keys(state.records).length > 0 || state.maintenance.length > 0) {
       await window.DeliVault?.saveRestorePoint(snapshotState(), "before-restore");
     }
     applySnapshot(snapshot);
@@ -778,7 +842,9 @@ function applySnapshot(snapshot) {
   state.records = isPlainObject(snapshot.records) ? snapshot.records : {};
   state.targets = isPlainObject(snapshot.targets) ? snapshot.targets : {};
   state.providers = normalizeProviders(snapshot.providers, state.records);
-  state.vehicles = normalizeVehicles(snapshot.vehicles);
+  const maintenanceState = window.DeliMaintenanceData.mergeSnapshot(snapshot, state);
+  state.vehicles = normalizeVehicles(maintenanceState.vehicles);
+  state.maintenance = maintenanceState.maintenance;
   state.lastVehicleId = validVisibleVehicleId(snapshot.lastVehicleId) || latestRecordedVehicleId();
   state.taxProfiles = normalizeTaxProfiles(snapshot.taxProfiles);
   state.assets = normalizeAssetValues(snapshot.assets);
@@ -867,7 +933,11 @@ function normalizeProviders(providers, records = {}) {
   });
 
   Object.values(isPlainObject(records) ? records : {}).forEach((record) => {
-    Object.keys(isPlainObject(record?.services) ? record.services : {}).forEach((id) => {
+    const ids = new Set([
+      ...Object.keys(isPlainObject(record?.services) ? record.services : {}),
+      ...window.DeliPayouts.normalize(record).map((payout) => payout.providerId).filter(Boolean),
+    ]);
+    ids.forEach((id) => {
       if (seen.has(id)) return;
       normalized.push({ id, label: id, icon: id.slice(0, 1).toUpperCase(), visible: false });
       seen.add(id);
@@ -978,6 +1048,7 @@ function blankRecord(date) {
     odometerKm: 0,
     distanceKm: 0,
     expenses: [],
+    payouts: [],
     gasCost: 0,
     fuelLiters: 0,
     otherExpense: 0,
@@ -990,7 +1061,7 @@ function blankRecord(date) {
 function fillFormForDate(date) {
   formRevision += 1;
   const savedRecord = state.records[date];
-  const record = normalizeRecord(savedRecord || blankRecord(date));
+  const record = normalizeRecord({ ...(isPlainObject(savedRecord) ? savedRecord : {}), date });
   els.selectedDate.value = date;
 
   draftServices = Object.fromEntries(
@@ -1014,6 +1085,8 @@ function fillFormForDate(date) {
   renderOdometerHint(record);
   draftExpenses = record.expenses.map((expense) => ({ ...expense }));
   renderExpenseList();
+  draftPayouts = record.payouts.map((payout) => ({ ...payout }));
+  renderPayoutList();
   els.memo.value = record.memo || "";
   setWeatherInput(record.weather || "");
   draftSourceData = { ...record.sourceData };
@@ -1047,6 +1120,7 @@ function readFormRecord() {
   record.odometerKm = numberValue(els.odometerKm.value);
   record.distanceKm = calculateDailyDistance(record.date, record.odometerKm, record.vehicleId);
   record.expenses = draftExpenses.map((expense) => ({ ...expense }));
+  record.payouts = draftPayouts.map((payout) => ({ ...payout }));
   record.gasCost = record.expenses
     .filter((expense) => expense.type === "gas")
     .reduce((sum, expense) => sum + expense.amount, 0);
@@ -1064,9 +1138,6 @@ function readFormRecord() {
 
 function renderSourceDataSummary() {
   const items = [];
-  if (numberValue(draftSourceData.transferAmount) > 0) {
-    items.push(`振込 ${yen(draftSourceData.transferAmount)}`);
-  }
   if (numberValue(draftSourceData.odometerKm) > 0) {
     items.push(`オドメーター ${formatNumber(draftSourceData.odometerKm)}km`);
   }
@@ -1160,6 +1231,102 @@ function renderOdometerHint(record) {
     return;
   }
   els.odometerHint.textContent = `前回 ${formatNumber(previous.value)}km → 当日分 ${formatNumber(current - previous.value)}km`;
+}
+
+function payoutProviderLabel(providerId) {
+  return state.providers.find((provider) => provider.id === providerId)?.label || providerId || "未分類";
+}
+
+function renderPayoutList() {
+  els.payoutTotal.textContent = yen(draftPayouts.reduce((sum, payout) => sum + payout.amount, 0));
+  els.payoutList.innerHTML = draftPayouts.length ? draftPayouts.map((payout, index) => `
+    <button class="expense-item payout-item" type="button" data-edit-payout="${index}" aria-haspopup="dialog" aria-controls="payoutDialog">
+      <span class="expense-item-copy"><strong>${escapeHtml(payoutProviderLabel(payout.providerId))}</strong>
+        ${payout.memo ? `<small>${escapeHtml(payout.memo)}</small>` : ""}
+      </span>
+      <strong class="expense-item-amount">${yen(payout.amount)}</strong>
+      <span class="expense-item-arrow" aria-hidden="true">›</span>
+    </button>
+  `).join("") : '<p class="payout-empty">振込があった日に追加できます</p>';
+}
+
+function openPayoutDialog(index = -1, trigger = els.addPayout) {
+  const payout = draftPayouts[index];
+  editingPayoutIndex = payout ? index : -1;
+  payoutDialogTrigger = trigger;
+  const providers = state.providers.filter((provider) => provider.visible !== false || provider.id === payout?.providerId);
+  els.payoutProvider.innerHTML = '<option value="">未分類</option>' + providers.map((provider) =>
+    `<option value="${escapeHtml(provider.id)}">${escapeHtml(provider.label)}</option>`
+  ).join("");
+  els.payoutProvider.value = payout ? payout.providerId : providers[0]?.id || "";
+  els.payoutAmount.value = payout ? payout.amount : "";
+  // 旧シート由来の小数額は、金額を変えずに分類やメモを修正できる。
+  els.payoutAmount.step = payout && !Number.isInteger(payout.amount) ? "any" : "1";
+  els.payoutAmount.setCustomValidity("");
+  els.payoutMemo.value = payout?.memo || "";
+  els.payoutDialogTitle.textContent = payout ? "振込を編集" : "振込を追加";
+  els.payoutDialogDate.textContent = `振込日：${formatDate(state.selectedDate)}`;
+  els.payoutDialogDelete.hidden = !payout;
+  els.payoutDialog.showModal();
+  requestAnimationFrame(() => (payout ? els.payoutAmount : els.payoutProvider).focus());
+}
+
+function applyPayoutDialog(event) {
+  event.preventDefault();
+  const amount = Number(els.payoutAmount.value);
+  const unchangedAmount = draftPayouts[editingPayoutIndex]?.amount === amount;
+  if ((!Number.isSafeInteger(amount) && !unchangedAmount) || amount <= 0) {
+    els.payoutAmount.setCustomValidity("振込金額を1円以上の整数で入力してください");
+    els.payoutAmount.reportValidity();
+    return;
+  }
+  const payout = {
+    id: draftPayouts[editingPayoutIndex]?.id || crypto.randomUUID(),
+    providerId: els.payoutProvider.value,
+    amount,
+    memo: els.payoutMemo.value.trim(),
+  };
+  if (editingPayoutIndex >= 0) draftPayouts[editingPayoutIndex] = payout;
+  else draftPayouts.push(payout);
+  renderPayoutList();
+  markFormDirty();
+  renderDailyPreview();
+  els.payoutDialog.close();
+}
+
+function deletePayoutFromDialog() {
+  if (editingPayoutIndex < 0) return;
+  draftPayouts.splice(editingPayoutIndex, 1);
+  renderPayoutList();
+  markFormDirty();
+  renderDailyPreview();
+  els.payoutDialog.close();
+}
+
+function payoutReportMarkup(records) {
+  const summary = window.DeliPayouts.summarize(records);
+  return `
+    <section class="payout-report" aria-label="振込の集計">
+      <div class="payout-report-heading"><h3>振込合計</h3><strong class="payout-report-total">${yen(summary.total)}</strong></div>
+      <p class="payout-note">振込日で集計。売上・利益・税額・資産には加算しません。</p>
+      ${summary.count ? `
+        <dl class="payout-provider-list">
+          ${summary.providers.map((provider) => `
+            <div data-payout-provider="${escapeHtml(provider.providerId)}">
+              <dt>${escapeHtml(payoutProviderLabel(provider.providerId))}<small>${provider.count}回</small></dt>
+              <dd class="payout-provider-amount">${yen(provider.amount)}</dd>
+            </div>`).join("")}
+        </dl>
+        <details class="payout-history"><summary>振込明細（${summary.count}件）</summary>
+          <div class="payout-history-list">${summary.entries.map((entry) => `
+            <button class="payout-history-item" type="button" data-jump-date="${escapeHtml(entry.date)}" aria-label="${escapeHtml(`${formatDate(entry.date)} ${payoutProviderLabel(entry.providerId)} ${yen(entry.amount)}。入力画面を開く`)}">
+              <span><small>${escapeHtml(formatDate(entry.date))}</small><strong>${escapeHtml(payoutProviderLabel(entry.providerId))}</strong>${entry.memo ? `<small>${escapeHtml(entry.memo)}</small>` : ""}</span>
+              <strong>${yen(entry.amount)}</strong><span aria-hidden="true">›</span>
+            </button>`).join("")}</div>
+        </details>
+      ` : '<p class="payout-empty">この期間の振込記録はありません</p>'}
+    </section>
+  `;
 }
 
 function renderServiceButtons() {
@@ -1279,6 +1446,7 @@ function applyProviderDialog(event) {
   }
   renderServiceButtons();
   renderProviderSettings();
+  renderPayoutList();
   schedulePersist();
   closeProviderDialog();
   showToast(provider ? `${label}の変更を保存しました` : `${label}を追加しました`);
@@ -1416,6 +1584,7 @@ function applyVehicleDialog(event) {
   invalidateOdometerIndex();
   schedulePersist();
   closeVehicleDialog();
+  window.DeliMaintenanceUI.render();
   showToast(`${label}を保存しました`);
 }
 
@@ -1439,6 +1608,7 @@ function toggleVehicleVisibility(event) {
   renderVehicleSettings();
   renderVehicleSelect();
   schedulePersist();
+  window.DeliMaintenanceUI.render();
   showToast(`${vehicle.label}を${vehicle.visible ? "表示" : "非表示"}にしました`);
 }
 
@@ -1885,6 +2055,7 @@ function render(options = {}) {
   if (currentScreen === "plan") renderPlan();
   if (currentScreen === "tax") renderTaxScreen();
   if (currentScreen === "settings") renderSettings();
+  if (currentScreen === "maintenance") window.DeliMaintenanceUI.render();
   if (currentScreen === "summary") {
     renderCurrentMetrics();
     renderReports();
@@ -1938,7 +2109,7 @@ async function renderRestorePoints() {
     const title = document.createElement("strong");
     title.textContent = restorePointLabel(point.reason);
     const detail = document.createElement("p");
-    detail.textContent = `${formatDateTime(point.savedAt)}・${formatNumber(point.recordCount)}日分`;
+    detail.textContent = `${formatDateTime(point.savedAt)}・${formatNumber(point.recordCount)}日分${point.maintenanceCount ? `・整備${formatNumber(point.maintenanceCount)}件` : ""}`;
     description.append(title, detail);
 
     const restore = document.createElement("button");
@@ -1957,6 +2128,7 @@ function restorePointLabel(reason) {
     "before-import": "ファイル読み込みの直前",
     "before-clear": "削除の直前",
     "before-restore": "復元の直前",
+    "before-maintenance-delete": "整備履歴の削除直前",
     daily: "自動保存（1日1回）",
   }[reason] || "自動保存";
 }
@@ -2005,7 +2177,7 @@ async function restoreFromPoint(event) {
 /** 1日1回、健全なデータがあるときだけ自動の復元ポイントを残す。 */
 async function saveDailyRestorePoint() {
   if (saveBlockedReason) return;
-  if (Object.keys(state.records).length === 0) return;
+  if (Object.keys(state.records).length === 0 && state.maintenance.length === 0) return;
 
   const points = (await window.DeliVault?.listRestorePoints()) || [];
   const latestDaily = points.find((point) => point.reason === "daily");
@@ -2076,7 +2248,7 @@ function closeWelcomeGuide() {
 }
 
 function renderBackupCare() {
-  const hasRecords = Object.keys(state.records).length > 0;
+  const hasRecords = Object.keys(state.records).length > 0 || state.maintenance.length > 0;
   let lastBackup = null;
   try {
     const saved = localStorage.getItem(LAST_BACKUP_KEY);
@@ -2606,6 +2778,7 @@ function renderInputCalendar(draftRecord = null) {
   els.calendarMonthSales.textContent = yen(monthSummary.sales);
   els.calendarMonthCount.textContent = `${formatNumber(monthSummary.count)}件`;
   els.calendarMonthHours.textContent = formatDuration(monthSummary.workHours);
+  els.calendarMonthPayouts.textContent = yen(window.DeliPayouts.summarize(monthRecords).total);
 
   const cells = [];
   const calendarCells = Math.ceil((leadingDays + daysInMonth) / 7) * 7;
@@ -2621,6 +2794,7 @@ function renderInputCalendar(draftRecord = null) {
       : normalizeRecord({ ...(isPlainObject(state.records[date]) ? state.records[date] : {}), date });
     const summary = summarizeRecords([source]);
     const hasActivity = summary.sales > 0 || summary.count > 0 || summary.workHours > 0 || summary.expense > 0;
+    const payoutAmount = source.payouts.reduce((sum, payout) => sum + payout.amount, 0);
     const dayOfWeek = new Date(`${date}T00:00:00`).getDay();
     const weather = weatherMark(source.weather ?? source.sourceData?.weather);
     const isSelected = date === state.selectedDate;
@@ -2631,19 +2805,22 @@ function renderInputCalendar(draftRecord = null) {
       dayOfWeek === 6 ? "is-saturday" : "",
       isSelected ? "is-selected" : "",
       isToday ? "is-today" : "",
-      hasActivity ? "has-activity" : "",
+      hasActivity || payoutAmount > 0 ? "has-activity" : "",
     ].filter(Boolean).join(" ");
     const details = hasActivity
       ? `<span class="input-calendar-count">${formatNumber(summary.count)}件</span><strong>${formatCalendarAmount(summary.sales)}</strong>`
-      : '<span class="input-calendar-add" aria-hidden="true">＋</span>';
-    const ariaDetails = hasActivity
+      : payoutAmount > 0
+        ? `<span class="input-calendar-payout-only">振込</span><strong>${formatCalendarAmount(payoutAmount)}</strong>`
+        : '<span class="input-calendar-add" aria-hidden="true">＋</span>';
+    const ariaDetails = (hasActivity
       ? `、${formatNumber(summary.count)}件、売上${yen(summary.sales)}`
-      : "、未入力";
+      : payoutAmount > 0 ? "" : "、未入力") + (payoutAmount > 0 ? `、振込${yen(payoutAmount)}` : "");
     cells.push(`
       <button class="${classes}" type="button" role="gridcell" data-input-date="${date}" aria-label="${year}年${monthNumber}月${day}日（${weekdayLabel(date)}）${ariaDetails}"${isSelected ? ' aria-current="date"' : ""}>
         <span class="input-calendar-date">${day}</span>
         ${weather ? `<span class="input-calendar-weather" aria-hidden="true">${weather}</span>` : ""}
         ${details}
+        ${hasActivity && payoutAmount > 0 ? '<span class="input-calendar-payout" aria-hidden="true">振込あり</span>' : ""}
       </button>
     `);
   }
@@ -2842,7 +3019,7 @@ function renderReports() {
 }
 
 function renderDayReport() {
-  const record = normalizeRecord(state.records[state.selectedDate] || blankRecord(state.selectedDate));
+  const record = normalizeRecord({ ...(isPlainObject(state.records[state.selectedDate]) ? state.records[state.selectedDate] : {}), date: state.selectedDate });
   const summary = summarizeRecords([record]);
   const vehicle = state.vehicles.find((item) => item.id === record.vehicleId);
   const key = monthKey(state.selectedDate);
@@ -2861,6 +3038,7 @@ function renderDayReport() {
   els.dayReport.innerHTML = `
     ${summaryGrid(summary, targetForDay(state.selectedDate))}
     ${serviceSummaryGrid(summary)}
+    ${payoutReportMarkup([record])}
     ${timeBandAnalysisMarkup([record])}
     ${barChart(
       `${year}年${month}月 日別売上`,
@@ -2909,7 +3087,7 @@ function expenseReportMarkup(expenses) {
 function renderWeekReport() {
   const { start, end } = weekRange(state.selectedDate);
   const days = datesBetween(start, end);
-  const records = days.map((date) => normalizeRecord(state.records[date] || blankRecord(date)));
+  const records = days.map((date) => normalizeRecord({ ...(isPlainObject(state.records[date]) ? state.records[date] : {}), date }));
   const summary = summarizeRecords(records);
   const selectedWeek = weekInputValue(state.selectedDate);
   const weekYear = Number(selectedWeek.slice(0, 4));
@@ -2927,6 +3105,7 @@ function renderWeekReport() {
 
   els.weekReport.innerHTML = `
     ${summaryGrid(summary, targetForWeek(state.selectedDate))}
+    ${payoutReportMarkup(records)}
     ${timeBandAnalysisMarkup(records)}
     ${barChart(
       `${weekYear}年 週別売上`,
@@ -2956,6 +3135,7 @@ function renderMonthReport() {
   els.monthReport.innerHTML = `
     ${summaryGrid(summary, state.targets[key] || 0)}
     ${serviceSummaryGrid(summary)}
+    ${payoutReportMarkup(records)}
     ${timeBandAnalysisMarkup(records)}
     ${comparisonBarChart(
       `${year}年 月別売上（前年比較）`,
@@ -2973,6 +3153,7 @@ function renderYearReport() {
 
   els.yearReport.innerHTML = `
     ${summaryGrid(summary, targetForYear(year))}
+    ${payoutReportMarkup(records)}
     ${timeBandAnalysisMarkup(records)}
     ${barChart(
       "年別売上",
@@ -3538,6 +3719,7 @@ function datesBetween(start, end) {
 
 function normalizeRecord(record) {
   const normalized = blankRecord(record.date || state.selectedDate);
+  normalized.payouts = window.DeliPayouts.normalize(record);
   const serviceIds = new Set([
     ...state.providers.map((provider) => provider.id),
     ...Object.keys(isPlainObject(record.services) ? record.services : {}),
@@ -3693,6 +3875,7 @@ function exportBackup() {
       targets: state.targets,
       providers: state.providers,
       vehicles: state.vehicles,
+      maintenance: state.maintenance,
       lastVehicleId: state.lastVehicleId,
       taxYear: state.taxYear,
       taxProfiles: state.taxProfiles,
@@ -3733,18 +3916,21 @@ function importBackup(event) {
       if (parsed.targets !== undefined && !isPlainObject(parsed.targets)) throw new Error("Invalid targets");
       if (parsed.providers !== undefined && !Array.isArray(parsed.providers)) throw new Error("Invalid providers");
       if (parsed.vehicles !== undefined && !Array.isArray(parsed.vehicles)) throw new Error("Invalid vehicles");
+      if (parsed.maintenance !== undefined && !Array.isArray(parsed.maintenance)) throw new Error("Invalid maintenance");
       if (parsed.taxProfiles !== undefined && !isPlainObject(parsed.taxProfiles)) throw new Error("Invalid tax profiles");
       if (parsed.assets !== undefined && !isPlainObject(parsed.assets)) throw new Error("Invalid assets");
 
       // 読み込みは既存の記録を丸ごと置き換えるため、直前の状態を復元ポイントに残す。
-      if (Object.keys(state.records).length > 0) {
+      if (Object.keys(state.records).length > 0 || state.maintenance.length > 0) {
         await window.DeliVault?.saveRestorePoint(snapshotState(), "before-import");
       }
 
       state.records = parsed.records;
       state.targets = parsed.targets || {};
       state.providers = normalizeProviders(parsed.providers, state.records);
-      state.vehicles = normalizeVehicles(parsed.vehicles);
+      const maintenanceState = window.DeliMaintenanceData.mergeSnapshot(parsed, state);
+      state.vehicles = normalizeVehicles(maintenanceState.vehicles);
+      state.maintenance = maintenanceState.maintenance;
       state.lastVehicleId = validVisibleVehicleId(parsed.lastVehicleId) || latestRecordedVehicleId();
       state.taxYear = Number(parsed.taxYear) || state.taxYear;
       state.taxProfiles = normalizeTaxProfiles(parsed.taxProfiles);

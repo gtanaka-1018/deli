@@ -1,0 +1,193 @@
+(function () {
+  "use strict";
+  const data = window.DeliMaintenanceData;
+  const el = {};
+  let app;
+  let selectedVehicle = "";
+  let editingId = "";
+  let original = "";
+  let originalEntry = "";
+  let trigger;
+  let saving = false;
+  const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+  const number = (value) => new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 1 }).format(value);
+  const dateLabel = (value) => value.replaceAll("-", "/");
+  const types = { motorcycle: "バイク", bicycle: "自転車", kei: "軽自動車", other: "その他" };
+
+  function vehicles() {
+    const state = app.getState();
+    const choices = [...state.vehicles];
+    for (const entry of state.maintenance) {
+      if (!choices.some((vehicle) => vehicle.id === entry.vehicleId)) {
+        choices.push({ id: entry.vehicleId, label: "未登録の車両", type: "other", icon: "●", visible: false });
+      }
+    }
+    return choices;
+  }
+
+  function init(adapter) {
+    app = adapter;
+    for (const id of ["maintenanceAddVehicle", "garageCount", "garageVehicles", "maintenanceVehicleName", "maintenanceVehicleType", "addMaintenance", "maintenanceCount", "maintenanceLatestDate", "maintenanceLatestKm", "maintenanceHistory", "maintenanceDialog", "maintenanceDialogTitle", "maintenanceForm", "maintenanceClose", "maintenanceVehicle", "maintenanceDate", "maintenanceOdometer", "maintenanceDescription", "maintenanceMemo", "maintenanceError", "maintenanceCancel", "maintenanceSave"]) {
+      el[id] = document.getElementById(id);
+    }
+    el.maintenanceAddVehicle.addEventListener("click", () => app.openVehicle(el.maintenanceAddVehicle));
+    el.garageVehicles.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-garage-vehicle]");
+      if (!button) return;
+      selectedVehicle = button.dataset.garageVehicle;
+      render();
+      el.garageVehicles.querySelector(`[data-garage-vehicle="${CSS.escape(selectedVehicle)}"]`)?.focus();
+    });
+    el.addMaintenance.addEventListener("click", () => open("", el.addMaintenance));
+    el.maintenanceHistory.addEventListener("click", (event) => {
+      const edit = event.target.closest("[data-maintenance-edit]");
+      const remove = event.target.closest("[data-maintenance-delete]");
+      if (edit) open(edit.dataset.maintenanceEdit, edit);
+      if (remove) removeEntry(remove.dataset.maintenanceDelete, remove);
+    });
+    el.maintenanceClose.addEventListener("click", close);
+    el.maintenanceCancel.addEventListener("click", close);
+    el.maintenanceDialog.addEventListener("cancel", (event) => { event.preventDefault(); close(); });
+    el.maintenanceDialog.addEventListener("close", () => {
+      if (trigger?.isConnected) trigger.focus();
+      else el.addMaintenance.focus();
+    });
+    el.maintenanceForm.addEventListener("submit", save);
+    document.querySelectorAll("[data-maintenance-preset]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const current = el.maintenanceDescription.value.trim();
+        const value = button.dataset.maintenancePreset;
+        if (!current.includes(value)) el.maintenanceDescription.value = current ? `${current}・${value}`.slice(0, 200) : value;
+        el.maintenanceDescription.focus();
+      });
+    });
+  }
+
+  function render() {
+    if (!app) return;
+    const state = app.getState();
+    const choices = vehicles();
+    if (!choices.some((vehicle) => vehicle.id === selectedVehicle)) selectedVehicle = choices.find((vehicle) => vehicle.id === state.lastVehicleId)?.id || choices[0]?.id || "";
+    const vehicle = choices.find((item) => item.id === selectedVehicle);
+    el.garageCount.textContent = `${choices.length}台`;
+    el.garageVehicles.innerHTML = choices.length ? choices.map((item) => {
+      const entries = data.forVehicle(state.maintenance, item.id);
+      return `<button class="garage-vehicle${item.id === selectedVehicle ? " selected" : ""}" type="button" data-garage-vehicle="${escape(item.id)}" aria-pressed="${item.id === selectedVehicle}">
+        <span class="garage-vehicle-icon" aria-hidden="true">${escape(item.icon)}</span>
+        <span class="garage-vehicle-copy"><strong>${escape(item.label)}</strong><small>${escape(types[item.type] || "その他")}${item.visible === false ? "・非表示の車両" : ""}</small><span>${entries.length ? `最終整備 ${dateLabel(entries[0].date)}` : "整備履歴なし"}</span></span>
+        <span class="garage-vehicle-arrow" aria-hidden="true">›</span>
+      </button>`;
+    }).join("") : '<div class="maintenance-empty"><span aria-hidden="true">＋</span><strong>最初の車両を登録</strong><p>いつ、何を整備したか。<br>車両ごとに残せます。</p></div>';
+    el.addMaintenance.disabled = !vehicle;
+    el.maintenanceVehicleName.textContent = vehicle?.label || "車両を登録しましょう";
+    el.maintenanceVehicleType.textContent = vehicle ? `${types[vehicle.type] || "その他"}のメンテナンス` : "車両ごとの記録";
+    const entries = vehicle ? data.forVehicle(state.maintenance, vehicle.id) : [];
+    el.maintenanceCount.textContent = `${entries.length}件`;
+    el.maintenanceLatestDate.textContent = entries[0] ? dateLabel(entries[0].date) : "—";
+    const readings = entries.filter((entry) => entry.odometerKm !== null).map((entry) => ({ date: entry.date, km: entry.odometerKm }));
+    for (const [date, record] of Object.entries(state.records)) {
+      if (record?.vehicleId === selectedVehicle && Number.isFinite(Number(record.odometerKm)) && Number(record.odometerKm) > 0) readings.push({ date, km: Number(record.odometerKm) });
+    }
+    readings.sort((a, b) => b.date.localeCompare(a.date) || b.km - a.km);
+    el.maintenanceLatestKm.textContent = readings[0] ? `${number(readings[0].km)} km` : "—";
+    el.maintenanceLatestKm.title = readings[0] ? `${dateLabel(readings[0].date)}の記録` : "";
+    el.maintenanceHistory.innerHTML = entries.length ? entries.map((entry) => `<article class="maintenance-entry">
+      <span class="maintenance-timeline-dot" aria-hidden="true"></span>
+      <div class="maintenance-entry-body"><div class="maintenance-entry-meta"><time datetime="${entry.date}">${dateLabel(entry.date)}</time><span>${entry.odometerKm === null ? "走行距離 未記録" : `${number(entry.odometerKm)} km`}</span></div>
+      <h4>${escape(entry.description)}</h4>${entry.memo ? `<p>${escape(entry.memo)}</p>` : ""}</div>
+      <div class="maintenance-entry-actions"><button type="button" class="text-button muted" data-maintenance-edit="${escape(entry.id)}" aria-label="${escape(`${dateLabel(entry.date)} ${entry.description}を編集`)}">編集</button><button type="button" class="text-button danger" data-maintenance-delete="${escape(entry.id)}" aria-label="${escape(`${dateLabel(entry.date)} ${entry.description}を削除`)}">削除</button></div>
+    </article>`).join("") : `<div class="maintenance-empty"><span aria-hidden="true">◇</span><strong>${vehicle ? "最初の整備を記録しましょう" : "相棒のケアを、ひとつの場所に"}</strong><p>オイル交換や点検の履歴を残して、<br>次の整備にも役立てましょう。</p></div>`;
+  }
+
+  function values() {
+    return {
+      vehicleId: el.maintenanceVehicle.value,
+      date: el.maintenanceDate.value,
+      odometerKm: el.maintenanceOdometer.value === "" ? null : Number(el.maintenanceOdometer.value),
+      description: el.maintenanceDescription.value.trim(),
+      memo: el.maintenanceMemo.value.trim(),
+    };
+  }
+
+  function open(id, source) {
+    const state = app.getState();
+    const entry = state.maintenance.find((item) => item.id === id);
+    if (id && !entry) return;
+    editingId = entry?.id || "";
+    originalEntry = entry ? JSON.stringify(entry) : "";
+    trigger = source;
+    el.maintenanceForm.reset();
+    el.maintenanceError.hidden = true;
+    el.maintenanceDialogTitle.textContent = entry ? "整備履歴を編集" : "整備を記録";
+    el.maintenanceVehicle.innerHTML = vehicles().map((vehicle) => `<option value="${escape(vehicle.id)}">${escape(vehicle.label)}</option>`).join("");
+    el.maintenanceVehicle.value = entry?.vehicleId || selectedVehicle;
+    el.maintenanceDate.value = entry?.date || app.today();
+    el.maintenanceOdometer.value = entry?.odometerKm ?? "";
+    el.maintenanceDescription.value = entry?.description || "";
+    el.maintenanceMemo.value = entry?.memo || "";
+    original = JSON.stringify(values());
+    el.maintenanceDialog.showModal();
+    el.maintenanceDescription.focus();
+  }
+
+  function close() {
+    if (saving) return;
+    if (JSON.stringify(values()) !== original && !confirm("入力中の整備履歴を破棄しますか？")) return;
+    el.maintenanceDialog.close();
+  }
+
+  function error(message) {
+    el.maintenanceError.textContent = message;
+    el.maintenanceError.hidden = false;
+  }
+
+  async function save(event) {
+    event.preventDefault();
+    if (saving || !el.maintenanceForm.reportValidity()) return;
+    const entry = values();
+    if (!entry.description) return error("整備内容を入力してください。");
+    if (!data.validDate(entry.date)) return error("整備日を確認してください。");
+    if (!vehicles().some((vehicle) => vehicle.id === entry.vehicleId)) return error("車両を選択してください。");
+    const state = app.getState();
+    if (editingId && JSON.stringify(state.maintenance.find((item) => item.id === editingId)) !== originalEntry) return error("この履歴は別の操作で更新されています。入力は残しています。画面を閉じて最新の履歴を確認してください。");
+    entry.id = editingId || `maintenance-${crypto.randomUUID()}`;
+    const entries = editingId ? state.maintenance.map((item) => item.id === editingId ? entry : item) : [...state.maintenance, entry];
+    saving = true;
+    el.maintenanceSave.disabled = true;
+    try {
+      await app.save(entries);
+      selectedVehicle = entry.vehicleId;
+      render();
+      el.maintenanceDialog.close();
+      app.notify("整備履歴を保存しました");
+    } catch {
+      error("保存できませんでした。入力を残しています。空き容量や設定画面の復元を確認してください。");
+    } finally {
+      saving = false;
+      el.maintenanceSave.disabled = false;
+    }
+  }
+
+  async function removeEntry(id, button) {
+    if (saving) return;
+    const entry = app.getState().maintenance.find((item) => item.id === id);
+    if (!entry || !confirm(`${dateLabel(entry.date)}「${entry.description}」を削除しますか？\n削除前の状態を復元ポイントに残します。`)) return;
+    saving = true;
+    button.disabled = true;
+    try {
+      await app.beforeDelete();
+      if (JSON.stringify(app.getState().maintenance.find((item) => item.id === id)) !== JSON.stringify(entry)) throw new Error("Entry changed");
+      await app.save(app.getState().maintenance.filter((item) => item.id !== id));
+      render();
+      el.addMaintenance.focus();
+      app.notify("整備履歴を削除しました");
+    } catch {
+      button.disabled = false;
+      app.notify("削除を保存できませんでした。履歴は残っています");
+    } finally {
+      saving = false;
+    }
+  }
+
+  window.DeliMaintenanceUI = Object.freeze({ init, render });
+})();

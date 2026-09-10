@@ -158,6 +158,7 @@
           reason: entry.reason || "",
           savedAt: entry.savedAt || "",
           recordCount: Number(entry.recordCount) || countRecords(entry.snapshot),
+          maintenanceCount: Array.isArray(entry.snapshot.maintenance) ? entry.snapshot.maintenance.length : 0,
         }))
         .sort((left, right) => String(right.savedAt).localeCompare(String(left.savedAt)));
     } catch {

@@ -118,6 +118,7 @@
           <img class="brand-mark" src="/brand-mark.svg" width="38" height="38" alt="" />
           <span class="brand-text">
             <h1>億メーター</h1>
+            <small>億り人を目指す配達員を応援する</small>
           </span>
         </div>
         <div class="header-actions">
@@ -154,6 +155,10 @@
           <svg class="screen-tab-icon ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2Zm3 4 3 4 3-4m-6 5h6m-6 3h6m-3-4v7"/></svg>
           <span>税金</span>
         </button>
+        <button class="screen-tab" type="button" data-screen="maintenance" aria-controls="maintenanceScreen">
+          <svg class="screen-tab-icon ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4a6 6 0 0 0-7 7L3 15a3 3 0 0 0 4 4l4-4a6 6 0 0 0 7-7l-4 4-3-3 3-5Z"/></svg>
+          <span>整備</span>
+        </button>
         <button class="screen-tab" type="button" data-screen="settings" aria-controls="settingsScreen">
           <svg class="screen-tab-icon ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3 1-1h4l1 3 3 1 3 1v4l-2 2-1 3v3l-4 2-2-2-3-1H6l-3-3 1-3V9L3 7l3-3 3 1Z"/><circle cx="12" cy="12" r="3"/></svg>
           <span>設定</span>
@@ -162,7 +167,7 @@
 
       <main class="workspace">
         <section class="app-screen active" id="inputScreen" data-screen-panel="input">
-          <div class="input-screen-heading"><h2>配達の記録</h2><button class="text-button primary" id="recordToday" type="button"><span aria-hidden="true">＋</span> 今日を記録</button></div>
+          <div class="input-screen-heading"><div><p class="screen-eyebrow">毎日の積み重ねを、未来の資産へ。</p><h2>配達の記録</h2></div><button class="text-button primary" id="recordToday" type="button"><span aria-hidden="true">＋</span> 今日を記録</button></div>
           <section class="input-calendar-panel" id="inputCalendarPanel" aria-label="入力日カレンダー">
             <div class="period-host" id="inputPeriodHost">
               <section class="control-strip" id="periodControls" aria-label="対象期間を選択">
@@ -192,6 +197,7 @@
               <div><span>件数</span><strong id="calendarMonthCount">0件</strong></div>
               <div><span>稼働</span><strong id="calendarMonthHours">0h</strong></div>
             </div>
+            <div class="calendar-payout-summary"><span>月の振込合計</span><strong id="calendarMonthPayouts">¥0</strong><small>振込日で集計</small></div>
             <div class="input-calendar-weekdays" aria-hidden="true">
               <span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span><span>日</span>
             </div>
@@ -257,6 +263,16 @@
                 </div>
               </div>
               <div class="service-picker" id="servicePicker" aria-label="プラットフォームを選択"></div>
+            </div>
+
+            <div class="input-section payout-field">
+              <div class="field-section-heading">
+                <strong>振込</strong>
+                <button class="text-button" id="addPayout" type="button" aria-haspopup="dialog" aria-controls="payoutDialog">＋ 振込を追加</button>
+              </div>
+              <p class="payout-note">選択した日を振込日として記録します。売上とは別に集計します。</p>
+              <div class="expense-total-row"><span>この日の振込合計</span><strong id="payoutTotal">¥0</strong></div>
+              <div class="expense-list" id="payoutList"></div>
             </div>
 
             <div class="input-section work-session-field">
@@ -362,7 +378,8 @@
         <section class="app-screen" id="summaryScreen" data-screen-panel="summary" hidden>
           <div class="screen-heading-panel">
             <div>
-              <h2>集計</h2>
+              <p class="screen-eyebrow">売上・利益・稼働を振り返る</p>
+              <h2>収益ダッシュボード</h2>
             </div>
             <div class="segmented" role="tablist" aria-label="集計単位">
               <button class="view-tab active" id="dayViewTab" type="button" role="tab" data-view="day" aria-controls="dayReport" aria-selected="true">日</button>
@@ -888,6 +905,32 @@
           <p class="ranking-disclaimer">ランキングは参加者の自己申告値です。収益や資産の正確性を保証するものではありません。</p>
         </section>
 
+        <section class="app-screen" id="maintenanceScreen" data-screen-panel="maintenance" hidden>
+          <div class="maintenance-heading">
+            <div><p class="screen-eyebrow">稼ぐ毎日を、車両のケアから。</p><h2>車両と整備履歴</h2></div>
+            <button class="text-button muted" id="maintenanceAddVehicle" type="button">＋ 車両を登録</button>
+          </div>
+          <div class="garage-layout">
+            <section class="panel garage-panel" aria-labelledby="garageTitle">
+              <div class="panel-heading"><h3 id="garageTitle">マイガレージ</h3><span class="garage-count" id="garageCount">0台</span></div>
+              <div class="garage-vehicles" id="garageVehicles" aria-label="履歴を見る車両"></div>
+            </section>
+            <section class="panel maintenance-panel" aria-labelledby="maintenanceVehicleName">
+              <div class="maintenance-vehicle-heading">
+                <div><p class="screen-eyebrow" id="maintenanceVehicleType">車両ごとの記録</p><h3 id="maintenanceVehicleName">車両を登録しましょう</h3></div>
+                <button class="text-button primary" id="addMaintenance" type="button" disabled>＋ 整備を記録</button>
+              </div>
+              <div class="maintenance-stats">
+                <div><span>整備記録</span><strong id="maintenanceCount">0件</strong></div>
+                <div><span>直近の整備</span><strong id="maintenanceLatestDate">—</strong></div>
+                <div><span>最新の走行距離</span><strong id="maintenanceLatestKm">—</strong></div>
+              </div>
+              <div class="maintenance-history-heading"><h3>整備履歴</h3><span>新しい順</span></div>
+              <div id="maintenanceHistory" class="maintenance-history"></div>
+            </section>
+          </div>
+        </section>
+
         <section class="app-screen" id="settingsScreen" data-screen-panel="settings" hidden>
           <section class="panel settings-panel">
             <div class="panel-heading">
@@ -1101,6 +1144,27 @@
         </form>
       </dialog>
 
+      <dialog class="service-dialog payout-dialog" id="payoutDialog" aria-labelledby="payoutDialogTitle" aria-describedby="payoutDialogDate">
+        <form class="dialog-card" id="payoutDialogForm" method="dialog">
+          <div class="dialog-heading">
+            <h2 id="payoutDialogTitle">振込を追加</h2>
+            <button class="dialog-close" id="payoutDialogClose" type="button" aria-label="閉じる">×</button>
+          </div>
+          <p class="payout-note" id="payoutDialogDate"></p>
+          <div class="dialog-fields">
+            <label for="payoutProvider">プラットフォーム<select id="payoutProvider"></select></label>
+            <label for="payoutAmount">振込金額 円<input id="payoutAmount" type="number" min="1" max="9007199254740991" step="1" inputmode="numeric" required /></label>
+            <label for="payoutMemo">メモ（任意）<input id="payoutMemo" type="text" maxlength="120" placeholder="例：8/24〜8/30分" /></label>
+          </div>
+          <div class="dialog-actions expense-dialog-actions">
+            <button class="text-button danger expense-delete-button" id="payoutDialogDelete" type="button" hidden>削除</button>
+            <span class="dialog-action-spacer"></span>
+            <button class="text-button muted" id="payoutDialogCancel" type="button">キャンセル</button>
+            <button class="text-button primary" type="submit">明細を反映</button>
+          </div>
+        </form>
+      </dialog>
+
       <dialog class="service-dialog provider-dialog" id="providerDialog" aria-labelledby="providerDialogTitle">
         <form class="dialog-card" id="providerDialogForm" method="dialog">
           <div class="dialog-heading">
@@ -1154,6 +1218,23 @@
             <button class="text-button muted" id="vehicleDialogCancel" type="button">キャンセル</button>
             <button class="text-button primary" id="vehicleDialogSubmit" type="submit">車両を登録</button>
           </div>
+        </form>
+      </dialog>
+
+      <dialog class="service-dialog maintenance-dialog" id="maintenanceDialog" aria-labelledby="maintenanceDialogTitle">
+        <form class="dialog-card" id="maintenanceForm">
+          <div class="dialog-heading"><h2 id="maintenanceDialogTitle">整備を記録</h2><button class="dialog-close" id="maintenanceClose" type="button" aria-label="閉じる">×</button></div>
+          <div class="dialog-fields">
+            <label for="maintenanceVehicle">車両<select id="maintenanceVehicle" required></select></label>
+            <label for="maintenanceDate">整備日<input id="maintenanceDate" type="date" required /></label>
+            <label for="maintenanceOdometer">積算走行距離（km・任意）<input id="maintenanceOdometer" type="number" min="0" step="0.1" inputmode="decimal" placeholder="例：35000" /></label>
+            <label for="maintenanceDescription">整備内容<input id="maintenanceDescription" type="text" maxlength="200" placeholder="例：オイル・タイヤ交換" required /></label>
+            <div class="maintenance-presets" aria-label="整備内容の候補"><button type="button" data-maintenance-preset="オイル交換">オイル交換</button><button type="button" data-maintenance-preset="タイヤ交換">タイヤ交換</button><button type="button" data-maintenance-preset="ブレーキ整備">ブレーキ整備</button><button type="button" data-maintenance-preset="定期点検">定期点検</button></div>
+            <label for="maintenanceMemo">メモ（任意）<textarea id="maintenanceMemo" rows="3" maxlength="1000" placeholder="交換した部品や、次回確認したいこと"></textarea></label>
+          </div>
+          <p class="maintenance-form-note">整備費用は、配達記録の「経費」に入力できます。</p>
+          <p id="maintenanceError" class="maintenance-error" role="alert" hidden></p>
+          <div class="dialog-actions"><button class="text-button muted" id="maintenanceCancel" type="button">キャンセル</button><button class="text-button primary" id="maintenanceSave" type="submit">保存する</button></div>
         </form>
       </dialog>
 
@@ -1213,6 +1294,9 @@
     </div>
     <script defer src="/tax-calculator.js"></script>
     <script defer src="/backup-vault.js"></script>
+    <script defer src="/payout-data.js"></script>
+    <script defer src="/maintenance-data.js"></script>
+    <script defer src="/maintenance.js"></script>
     <script defer src="/app.js"></script>
     <script defer src="/traffic.js"></script>
     <script defer src="/supabase-client.js"></script>

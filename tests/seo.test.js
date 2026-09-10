@@ -52,7 +52,7 @@ test("サイトマップは本番canonical URLだけを公開する", () => {
   const sitemap = fs.readFileSync(publicPath("sitemap.xml"), "utf8");
   const urls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
   assert.deepEqual(urls, ["https://okumeter.com/"]);
-  assert.match(sitemap, /<lastmod>2026-09-06<\/lastmod>/);
+  assert.match(sitemap, /<lastmod>2026-09-10<\/lastmod>/);
 });
 
 test("IndexNow所有確認キーはファイル名と内容が一致する", () => {

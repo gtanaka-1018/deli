@@ -5,7 +5,7 @@
  * 色は var(--token) で参照する。ここを差し替えるだけでライト／ダークが切り替わる。
  *
  * 方針:
- *   - 画面の骨格と操作色はXアプリに寄せる（ダークは黒地、アクセントは #1d9bf0）。
+ *   - カードを浮かせる明るい下地と、濃紺のダーク。操作色は青で統一する。
  *   - 金額の増減を表す緑・赤・橙は意味を持つ色なので、Xの青とは別に残す。
  *     売上や資産の「プラス」を青にすると、金額の意味が読めなくなるため。
  *   - ダークはトークンの再定義だけで完結させる。個別の上書きを増やさない。
@@ -15,7 +15,7 @@
   color-scheme: light;
 
   /* 下地と面 */
-  --bg: #ffffff;
+  --bg: #f3f6fa;
   --bg-tint-a: rgba(29, 155, 240, 0.06);
   --bg-tint-b: rgba(0, 186, 124, 0.05);
   --surface: #ffffff;
@@ -106,12 +106,12 @@
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --bg: #000000;
+    --bg: #0b111b;
     --bg-tint-a: rgba(29, 155, 240, 0.1);
     --bg-tint-b: rgba(0, 186, 124, 0.07);
-    --surface: #16181c;
-    --surface-soft: #1c1f23;
-    --surface-strong: #22262b;
+    --surface: #141e2b;
+    --surface-soft: #1a2737;
+    --surface-strong: #223248;
     --surface-inverse: #e7e9ea;
 
     --ink: #e7e9ea;
@@ -120,9 +120,9 @@
     --on-accent: #ffffff;
     --on-inverse: #0f1419;
 
-    --line: #2f3336;
-    --line-soft: #21262b;
-    --line-strong: #3d4247;
+    --line: #314054;
+    --line-soft: #243246;
+    --line-strong: #53657c;
 
     --accent: #1d9bf0;
     --accent-hover: #4fb2f5;
@@ -163,14 +163,14 @@
     --meter-fill: #1d9bf0;
     --meter-glow: #7ce2ff;
 
-    --topbar-bg: rgba(0, 0, 0, 0.85);
+    --topbar-bg: rgba(11, 17, 27, 0.94);
     --topbar-ink: #e7e9ea;
     --topbar-muted: #8b98a5;
     --topbar-line: #2f3336;
     --topbar-chip: rgba(231, 233, 234, 0.1);
 
     --white-rgb: 255 255 255;
-    --surface-rgb: 22 24 28;
+    --surface-rgb: 20 30 43;
     --shadow-rgb: 0 0 0;
     --line-rgb: 47 51 54;
     --accent-rgb: 29 155 240;
@@ -185,12 +185,12 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #000000;
+  --bg: #0b111b;
   --bg-tint-a: rgba(29, 155, 240, 0.1);
   --bg-tint-b: rgba(0, 186, 124, 0.07);
-  --surface: #16181c;
-  --surface-soft: #1c1f23;
-  --surface-strong: #22262b;
+  --surface: #141e2b;
+  --surface-soft: #1a2737;
+  --surface-strong: #223248;
   --surface-inverse: #e7e9ea;
 
   --ink: #e7e9ea;
@@ -199,9 +199,9 @@
   --on-accent: #ffffff;
   --on-inverse: #0f1419;
 
-  --line: #2f3336;
-  --line-soft: #21262b;
-  --line-strong: #3d4247;
+  --line: #314054;
+  --line-soft: #243246;
+  --line-strong: #53657c;
 
   --accent: #1d9bf0;
   --accent-hover: #4fb2f5;
@@ -242,14 +242,14 @@
   --meter-fill: #1d9bf0;
   --meter-glow: #7ce2ff;
 
-  --topbar-bg: rgba(0, 0, 0, 0.85);
+  --topbar-bg: rgba(11, 17, 27, 0.94);
   --topbar-ink: #e7e9ea;
   --topbar-muted: #8b98a5;
   --topbar-line: #2f3336;
   --topbar-chip: rgba(231, 233, 234, 0.1);
 
   --white-rgb: 255 255 255;
-  --surface-rgb: 22 24 28;
+  --surface-rgb: 20 30 43;
   --shadow-rgb: 0 0 0;
   --line-rgb: 47 51 54;
   --accent-rgb: 29 155 240;
