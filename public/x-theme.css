@@ -2609,6 +2609,12 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
 .maintenance-form-note { color: var(--muted); font-size: 12px; line-height: 1.7; }
 .maintenance-error { padding: 12px; border-radius: 10px; background: var(--red-soft); color: var(--red); font-size: 13px; line-height: 1.6; }
 #addMaintenance:disabled { background: var(--surface-strong); color: var(--muted); cursor: default; }
+.maintenance-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.maintenance-import-preview { max-height: 32dvh; overflow-y: auto; margin: 16px 0; border-block: 1px solid var(--line); }
+.maintenance-import-preview article { padding: 12px 0; border-bottom: 1px solid var(--line-soft); }
+.maintenance-import-preview strong { display: block; color: var(--ink); font-size: 14px; line-height: 1.7; }
+.maintenance-import-preview small, .maintenance-import-preview p { color: var(--muted); font-size: 12px; line-height: 1.7; }
+.maintenance-import-preview p { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 
 .erabibase-panel { margin-top: 24px; padding: 24px; }
 .erabibase-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }

@@ -106,6 +106,26 @@ async function startApp() {
       const point = await window.DeliVault?.saveRestorePoint(snapshotState(), "before-maintenance-delete");
       if (!point) throw new Error("Unable to save restore point");
     },
+    importEntries: async (batch, targetId) => {
+      const checkpoint = JSON.stringify([state.vehicles, state.maintenance]);
+      const point = await window.DeliVault?.saveRestorePoint(snapshotState(), "before-maintenance-import");
+      if (!point) throw new Error("追加前の復元ポイントを保存できませんでした。まだ追加していません。");
+      if (checkpoint !== JSON.stringify([state.vehicles, state.maintenance])) throw new Error("車両や整備履歴が更新されました。取り込みを開き直してください。");
+      const previousVehicles = state.vehicles;
+      const previousEntries = state.maintenance;
+      let vehicle = state.vehicles.find((item) => item.id === targetId);
+      if (targetId && !vehicle) throw new Error("追加先の車両を選び直してください。");
+      if (!targetId) vehicle = normalizeVehicles([{ ...batch.vehicle, id: uniqueVehicleId(batch.vehicle.type), visible: true }])[0];
+      const result = window.DeliMaintenanceData.mergeImport(state.maintenance, batch, vehicle.id);
+      if (!result.added) return { ...result, vehicleId: vehicle.id };
+      state.vehicles = targetId ? state.vehicles : [...state.vehicles, vehicle];
+      state.maintenance = result.entries;
+      try { await persist(); }
+      catch { state.vehicles = previousVehicles; state.maintenance = previousEntries; throw new Error("保存できませんでした。追加前の記録と読み込んだ内容を残しています。"); }
+      renderVehicleSettings();
+      renderVehicleSelect();
+      return { ...result, vehicleId: vehicle.id };
+    },
     notify: showToast,
   });
   applyRequestedScreen();
@@ -2129,6 +2149,7 @@ function restorePointLabel(reason) {
     "before-clear": "削除の直前",
     "before-restore": "復元の直前",
     "before-maintenance-delete": "整備履歴の削除直前",
+    "before-maintenance-import": "整備履歴の取り込み直前",
     daily: "自動保存（1日1回）",
   }[reason] || "自動保存";
 }

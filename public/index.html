@@ -908,7 +908,8 @@
         <section class="app-screen" id="maintenanceScreen" data-screen-panel="maintenance" hidden>
           <div class="maintenance-heading">
             <div><p class="screen-eyebrow">稼ぐ毎日を、車両のケアから。</p><h2>車両と整備履歴</h2></div>
-            <button class="text-button muted" id="maintenanceAddVehicle" type="button">＋ 車両を登録</button>
+            <div class="maintenance-tools"><button class="text-button muted" id="maintenanceImportOpen" type="button">履歴を取り込む</button><button class="text-button muted" id="maintenanceAddVehicle" type="button">＋ 車両を登録</button></div>
+            <input id="maintenanceImportFile" type="file" accept=".json,application/json" hidden />
           </div>
           <div class="garage-layout">
             <section class="panel garage-panel" aria-labelledby="garageTitle">
@@ -1244,6 +1245,18 @@
           <p class="maintenance-form-note">整備費用は、配達記録の「経費」に入力できます。</p>
           <p id="maintenanceError" class="maintenance-error" role="alert" hidden></p>
           <div class="dialog-actions"><button class="text-button muted" id="maintenanceCancel" type="button">キャンセル</button><button class="text-button primary" id="maintenanceSave" type="submit">保存する</button></div>
+        </form>
+      </dialog>
+
+      <dialog class="service-dialog maintenance-dialog" id="maintenanceImportDialog" aria-labelledby="maintenanceImportTitle">
+        <form class="dialog-card" id="maintenanceImportForm">
+          <div class="dialog-heading"><h2 id="maintenanceImportTitle">整備履歴を取り込む</h2><button class="dialog-close" id="maintenanceImportClose" type="button" aria-label="閉じる">×</button></div>
+          <p id="maintenanceImportSummary" class="maintenance-form-note"></p>
+          <label for="maintenanceImportTarget">追加先の車両<select id="maintenanceImportTarget"></select></label>
+          <p class="maintenance-form-note">同じ履歴は重複して追加しません。売上・経費・資産と、保存済みの整備履歴はそのまま残ります。</p>
+          <div id="maintenanceImportPreview" class="maintenance-import-preview"></div>
+          <p id="maintenanceImportError" class="maintenance-error" role="alert" hidden></p>
+          <div class="dialog-actions"><button class="text-button muted" id="maintenanceImportCancel" type="button">キャンセル</button><button class="text-button primary" id="maintenanceImportSave" type="submit">履歴を追加する</button></div>
         </form>
       </dialog>
 

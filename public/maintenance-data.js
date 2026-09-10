@@ -52,5 +52,42 @@
     return { vehicles, maintenance };
   }
 
-  return Object.freeze({ validDate, normalize, forVehicle, mergeSnapshot });
+  function readImport(payload) {
+    if (!payload || payload.type !== "okumeter-maintenance" || payload.version !== 1
+      || !Array.isArray(payload.entries) || !payload.entries.length || payload.entries.length > 2000
+      || typeof payload.vehicle?.label !== "string" || !payload.vehicle.label.trim()
+      || payload.vehicle.label.length > 30 || !["motorcycle", "bicycle", "kei", "other"].includes(payload.vehicle.type)) {
+      throw new Error("整備履歴の取り込み用ファイルを選んでください。");
+    }
+    const ids = new Set();
+    for (const entry of payload.entries) {
+      if (!entry || typeof entry.id !== "string" || !entry.id.trim() || entry.id !== entry.id.trim() || entry.id.length > 150 || ids.has(entry.id)
+        || !validDate(entry.date) || typeof entry.description !== "string" || !entry.description.trim() || entry.description.length > 200
+        || (entry.odometerKm !== null && (typeof entry.odometerKm !== "number" || !Number.isFinite(entry.odometerKm) || entry.odometerKm < 0))
+        || (entry.memo !== undefined && (typeof entry.memo !== "string" || entry.memo.length > 1000))) {
+        throw new Error("日付・走行距離・整備内容を確認してください。まだ追加していません。");
+      }
+      ids.add(entry.id);
+    }
+    return { vehicle: { label: payload.vehicle.label.trim(), type: payload.vehicle.type }, entries: normalize(payload.entries.map((entry) => ({ ...entry, vehicleId: "import" }))) };
+  }
+
+  function mergeImport(current, batch, vehicleId) {
+    const entries = [...current];
+    const signature = (entry) => JSON.stringify([entry.vehicleId, entry.date, entry.odometerKm, entry.description]);
+    const known = new Set(current.map(signature));
+    const ids = new Set(current.map((entry) => entry.id));
+    let added = 0;
+    for (const entry of batch.entries) {
+      const candidate = { ...entry, vehicleId, id: `import:${encodeURIComponent(vehicleId)}:${encodeURIComponent(entry.id)}` };
+      if (ids.has(candidate.id) || known.has(signature(candidate))) continue;
+      entries.push(candidate);
+      ids.add(candidate.id);
+      known.add(signature(candidate));
+      added++;
+    }
+    return { entries, added, skipped: batch.entries.length - added };
+  }
+
+  return Object.freeze({ validDate, normalize, forVehicle, mergeSnapshot, readImport, mergeImport });
 });

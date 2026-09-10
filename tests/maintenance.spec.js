@@ -14,6 +14,79 @@ async function open(page, maintenance = [], custom = {}) {
 }
 
 const stored = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("deli-sales-tracker-v1")));
+const importFile = (entries, label = "配達バイク") => ({ name: "maintenance.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ type: "okumeter-maintenance", version: 1, vehicle: { label, type: "motorcycle" }, entries })) });
+
+test("整備の取り込みは既存の記録を保ち、再読込と再取り込みでも重複しない", async ({ page }) => {
+  await open(page, [entry()], { assets: { cash: 4321 }, targets: { "2026-09": 9999 } });
+  const before = await page.evaluate(() => window.DeliSyncData.getSnapshot());
+  const file = importFile([entry({ id: "source-old" }), entry({ id: "source-new", date: "2026-09-02", description: "定期点検", memo: "元の記録から追加" })]);
+  await page.locator("#maintenanceImportFile").setInputFiles(file);
+  await expect(page.locator("#maintenanceImportSummary")).toContainText("追加 1件・取り込み済み 1件");
+  await expect(page.locator("#maintenanceImportTarget")).toHaveValue("bike-1");
+  await page.locator("#maintenanceImportSave").click();
+  await expect(page.locator("#maintenanceImportDialog")).toBeHidden();
+  const after = await stored(page);
+  for (const field of ["records", "assets", "targets", "vehicles"]) expect(after[field]).toEqual(before[field]);
+  expect(after.maintenance).toHaveLength(2);
+  expect(after.maintenance[0]).toEqual(before.maintenance[0]);
+  await page.reload({ waitUntil: "networkidle" });
+  await page.locator('[data-screen="maintenance"]').click();
+  await page.locator("#maintenanceImportFile").setInputFiles(file);
+  await expect(page.locator("#maintenanceImportSummary")).toContainText("追加 0件・取り込み済み 2件");
+  await expect(page.locator("#maintenanceImportSave")).toBeDisabled();
+  await page.locator("#maintenanceImportCancel").click();
+  await page.locator('[data-screen="settings"]').click();
+  await expect(page.locator("#restorePointList")).toContainText("整備履歴の取り込み直前");
+});
+
+test("取り込み前の控えが保存できなければ、整備履歴を変更しない", async ({ page }) => {
+  await open(page, [entry()]);
+  const before = await stored(page);
+  await page.locator("#maintenanceImportFile").setInputFiles(importFile([entry({ id: "new", description: "点検" })]));
+  await page.evaluate(() => { window.DeliVault = { ...window.DeliVault, saveRestorePoint: async () => null }; });
+  await page.locator("#maintenanceImportSave").click();
+  await expect(page.locator("#maintenanceImportError")).toContainText("復元ポイントを保存できませんでした");
+  expect(await stored(page)).toEqual(before);
+  await expect(page.locator("#maintenanceImportPreview")).toContainText("点検");
+});
+
+test("未登録車両への取り込みはキャンセル可能で、確定時だけ車両を作る", async ({ page }, testInfo) => {
+  await open(page, [], { vehicles: [] });
+  const file = importFile([entry({ description: "納車時点検" })], "新しい相棒");
+  await page.locator("#maintenanceImportFile").setInputFiles(file);
+  await expect(page.locator("#maintenanceImportTarget")).toHaveValue("");
+  await expect(page.locator("#maintenanceImportSave")).toBeInViewport();
+  await page.screenshot({ path: testInfo.outputPath("maintenance-import.png") });
+  await page.locator("#maintenanceImportCancel").click();
+  expect((await stored(page)).vehicles).toEqual([]);
+  await page.locator("#maintenanceImportFile").setInputFiles(file);
+  await page.locator("#maintenanceImportSave").click();
+  await expect(page.locator("#maintenanceImportDialog")).toBeHidden();
+  const result = await stored(page);
+  expect(result.vehicles).toHaveLength(1);
+  expect(result.vehicles[0].label).toBe("新しい相棒");
+  expect(result.maintenance[0].vehicleId).toBe(result.vehicles[0].id);
+  await expect(page.locator("#maintenanceVehicleName")).toHaveText("新しい相棒");
+});
+
+test("取り込みの保存に失敗しても既存の記録と確認中の履歴を残す", async ({ page }) => {
+  await open(page, [], { vehicles: [] });
+  const before = await stored(page);
+  await page.locator("#maintenanceImportFile").setInputFiles(importFile([entry()]));
+  await page.evaluate(() => {
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key === "deli-sales-tracker-v1") throw new DOMException("test", "QuotaExceededError");
+      return set.call(this, key, value);
+    };
+  });
+  await page.locator("#maintenanceImportSave").click();
+  await expect(page.locator("#maintenanceImportError")).toContainText("保存できませんでした");
+  await expect(page.locator("#maintenanceImportPreview")).toContainText("オイル交換");
+  expect(await stored(page)).toEqual(before);
+  expect(await page.evaluate(() => window.DeliSyncData.getSnapshot().vehicles)).toEqual([]);
+  expect(await page.evaluate(() => window.DeliSyncData.getSnapshot().maintenance)).toEqual([]);
+});
 
 test("関連記事は車両に応じて変わり、記録を送信せず別タブで開く", async ({ page, context }) => {
   const outbound = [];

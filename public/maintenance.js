@@ -9,6 +9,7 @@
   let originalEntry = "";
   let trigger;
   let saving = false;
+  let importBatch = null;
   const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const number = (value) => new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 1 }).format(value);
   const dateLabel = (value) => value.replaceAll("-", "/");
@@ -48,6 +49,15 @@
     for (const id of ["maintenanceAddVehicle", "garageCount", "garageVehicles", "maintenanceVehicleName", "maintenanceVehicleType", "addMaintenance", "maintenanceCount", "maintenanceLatestDate", "maintenanceLatestKm", "maintenanceHistory", "maintenanceDialog", "maintenanceDialogTitle", "maintenanceForm", "maintenanceClose", "maintenanceVehicle", "maintenanceDate", "maintenanceOdometer", "maintenanceDescription", "maintenanceMemo", "maintenanceError", "maintenanceCancel", "maintenanceSave"]) {
       el[id] = document.getElementById(id);
     }
+    for (const id of ["maintenanceImportOpen", "maintenanceImportFile", "maintenanceImportDialog", "maintenanceImportForm", "maintenanceImportSummary", "maintenanceImportTarget", "maintenanceImportPreview", "maintenanceImportError", "maintenanceImportClose", "maintenanceImportCancel", "maintenanceImportSave"]) el[id] = document.getElementById(id);
+    el.maintenanceImportOpen.addEventListener("click", () => el.maintenanceImportFile.click());
+    el.maintenanceImportFile.addEventListener("change", readImportFile);
+    el.maintenanceImportTarget.addEventListener("change", renderImport);
+    el.maintenanceImportClose.addEventListener("click", closeImport);
+    el.maintenanceImportCancel.addEventListener("click", closeImport);
+    el.maintenanceImportDialog.addEventListener("cancel", (event) => { event.preventDefault(); closeImport(); });
+    el.maintenanceImportDialog.addEventListener("close", () => el.maintenanceImportOpen.focus());
+    el.maintenanceImportForm.addEventListener("submit", saveImport);
     el.maintenanceAddVehicle.addEventListener("click", () => app.openVehicle(el.maintenanceAddVehicle));
     el.garageVehicles.addEventListener("click", (event) => {
       const button = event.target.closest("[data-garage-vehicle]");
@@ -79,6 +89,67 @@
         el.maintenanceDescription.focus();
       });
     });
+  }
+
+  async function readImportFile() {
+    const file = el.maintenanceImportFile.files[0];
+    el.maintenanceImportFile.value = "";
+    if (!file || saving) return;
+    try {
+      if (file.size > 2_000_000) throw new Error("整備履歴ファイルは2MB以内にしてください。");
+      importBatch = data.readImport(JSON.parse((await file.text()).replace(/^\uFEFF/, "")));
+      const choices = app.getState().vehicles;
+      el.maintenanceImportTarget.innerHTML = choices.map((vehicle) => `<option value="${escape(vehicle.id)}">${escape(vehicle.label)}</option>`).join("")
+        + `<option value="">${escape(importBatch.vehicle.label)} を新しく登録</option>`;
+      const key = (label) => String(label).normalize("NFKC").replace(/[\s-]/g, "").toLowerCase();
+      el.maintenanceImportTarget.value = choices.find((vehicle) => key(vehicle.label) === key(importBatch.vehicle.label))?.id || "";
+      el.maintenanceImportError.hidden = true;
+      renderImport();
+      el.maintenanceImportDialog.showModal();
+      el.maintenanceImportTarget.focus();
+    } catch (error) {
+      importBatch = null;
+      app.notify(error instanceof SyntaxError ? "整備履歴の取り込み用JSONファイルを選んでください" : error.message);
+    }
+  }
+
+  function renderImport() {
+    if (!importBatch) return;
+    const targetId = el.maintenanceImportTarget.value;
+    const result = data.mergeImport(app.getState().maintenance, importBatch, targetId);
+    el.maintenanceImportSummary.textContent = `${importBatch.vehicle.label}の履歴 ${importBatch.entries.length}件：追加 ${result.added}件・取り込み済み ${result.skipped}件`;
+    el.maintenanceImportPreview.innerHTML = data.forVehicle(importBatch.entries).map((entry) => `<article><small>${dateLabel(entry.date)} ・ ${entry.odometerKm === null ? "走行距離 未記録" : `${number(entry.odometerKm)} km`}</small><strong>${escape(entry.description)}</strong>${entry.memo ? `<p>${escape(entry.memo)}</p>` : ""}</article>`).join("");
+    el.maintenanceImportSave.disabled = !result.added;
+  }
+
+  function closeImport() {
+    if (saving) return;
+    el.maintenanceImportDialog.close();
+    importBatch = null;
+  }
+
+  async function saveImport(event) {
+    event.preventDefault();
+    if (saving || !importBatch) return;
+    saving = true;
+    el.maintenanceImportSave.disabled = true;
+    el.maintenanceImportTarget.disabled = true;
+    el.maintenanceImportError.hidden = true;
+    try {
+      const result = await app.importEntries(importBatch, el.maintenanceImportTarget.value);
+      selectedVehicle = result.vehicleId;
+      el.maintenanceImportDialog.close();
+      importBatch = null;
+      render();
+      app.notify(`整備履歴を${result.added}件追加しました${result.skipped ? `（取り込み済み${result.skipped}件）` : ""}`);
+    } catch (error) {
+      el.maintenanceImportError.textContent = error.message;
+      el.maintenanceImportError.hidden = false;
+    } finally {
+      saving = false;
+      el.maintenanceImportTarget.disabled = false;
+      renderImport();
+    }
   }
 
   function render() {

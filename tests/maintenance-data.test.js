@@ -46,3 +46,27 @@ test("新バックアップの空配列は履歴の明示的な削除として�
   const merged = data.mergeSnapshot({ vehicles: [], maintenance: [] }, { vehicles: [{ id: "bike-1" }], maintenance: [entry()] });
   assert.deepEqual(merged, { vehicles: [], maintenance: [] });
 });
+
+const transfer = (entries = [entry()]) => ({ type: "okumeter-maintenance", version: 1, vehicle: { label: "配達用バイク", type: "motorcycle" }, entries });
+
+test("整備履歴ファイルは不正な行を黙って落とさず全体を拒否する", () => {
+  assert.equal(data.readImport(transfer()).entries.length, 1);
+  for (const bad of [entry({ date: "2026-02-30" }), entry({ odometerKm: -1 }), entry({ odometerKm: "12000" }), entry({ description: "" }), entry({ id: " oil-1 " })]) {
+    assert.throws(() => data.readImport(transfer([entry({ id: "valid" }), bad])));
+  }
+  assert.throws(() => data.readImport(transfer([entry(), entry()])));
+  assert.throws(() => data.readImport({ records: {} }));
+});
+
+test("整備の追加は既存履歴・他車両を保持し、再取り込みと手入力との重複を避ける", () => {
+  const current = [entry(), entry({ id: "other", vehicleId: "bike-2" })];
+  const before = JSON.stringify(current);
+  const batch = data.readImport(transfer([entry({ id: "import-oil" }), entry({ id: "new", date: "2026-09-02", description: "点検" })]));
+  const merged = data.mergeImport(current, batch, "bike-1");
+  assert.equal(merged.added, 1);
+  assert.equal(merged.skipped, 1);
+  assert.equal(JSON.stringify(current), before);
+  const edited = merged.entries.map((item) => item.id.startsWith("import:") ? { ...item, description: "追記した点検内容" } : item);
+  assert.equal(data.mergeImport(edited, batch, "bike-1").added, 0);
+  assert.equal(data.mergeImport(merged.entries, batch, "bike-3").added, 2);
+});
