@@ -11,6 +11,7 @@
     x: "/referral/x",
     instagram: "/referral/instagram",
     share: "/referral/share",
+    erabibase: "/referral/erabibase",
   });
 
   function normalizedSource(value) {
@@ -18,6 +19,7 @@
     if (["x", "x.com", "twitter", "twitter.com", "tweet"].includes(source)) return "x";
     if (["instagram", "instagram.com", "insta", "ig"].includes(source)) return "instagram";
     if (["share", "app_share", "native_share"].includes(source)) return "share";
+    if (["erabibase", "erabibase.com"].includes(source)) return "erabibase";
     return "";
   }
 
@@ -25,6 +27,7 @@
     if (!referrer) return "";
     try {
       const hostname = new URL(referrer).hostname.toLowerCase();
+      if (hostname === "erabibase.com" || hostname === "www.erabibase.com") return "erabibase";
       if (hostname === "t.co" || hostname === "x.com" || hostname.endsWith(".x.com")
         || hostname === "twitter.com" || hostname.endsWith(".twitter.com")) return "x";
       if (hostname === "instagram.com" || hostname.endsWith(".instagram.com")) return "instagram";

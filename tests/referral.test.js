@@ -25,3 +25,11 @@ test("識別した流入元を匿名の分析用パスへ置き換える", () =>
   const shared = rewriteEvent({ url: "https://okumeter.com/?utm_source=share&utm_medium=referral", type: "pageview" }, "share");
   assert.equal(shared.url, "https://okumeter.com/referral/share");
 });
+
+test("エラビベース流入は固定パスへ集約し、クエリやフラグメントを分析URLへ残さない", () => {
+  const landing = "https://okumeter.com/?utm_source=erabibase&utm_content=gear#private-note";
+  assert.equal(detectSource(landing), "erabibase");
+  assert.equal(detectSource("https://okumeter.com/", "https://erabibase.com/nmax125-vs-pcx125/"), "erabibase");
+  assert.equal(detectSource("https://okumeter.com/", "https://erabibase.com.example.org/"), "");
+  assert.equal(rewriteEvent({ url: landing, type: "pageview" }, "erabibase").url, "https://okumeter.com/referral/erabibase");
+});

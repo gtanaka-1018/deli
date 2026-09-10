@@ -15,6 +15,31 @@ async function open(page, maintenance = [], custom = {}) {
 
 const stored = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("deli-sales-tracker-v1")));
 
+test("関連記事は車両に応じて変わり、記録を送信せず別タブで開く", async ({ page, context }) => {
+  const outbound = [];
+  await context.route("https://erabibase.com/**", async (route) => {
+    outbound.push({ url: route.request().url(), headers: await route.request().allHeaders() });
+    await route.fulfill({ contentType: "text/html", body: "<title>記事のテスト</title>" });
+  });
+  await open(page, [entry()], { vehicles: [{ ...vehicles[0], label: "ＮＭＡＸ１２５ 非公開の車両名" }, vehicles[1]] });
+  await expect(page.locator("#erabibaseArticles")).toContainText("スマホホルダーの適合を確認");
+  expect(outbound).toHaveLength(0);
+  const before = await stored(page);
+  const [article] = await Promise.all([context.waitForEvent("page"), page.locator("#erabibaseArticles a").first().click()]);
+  await article.waitForLoadState();
+  expect(await article.evaluate(() => window.opener)).toBeNull();
+  const request = outbound.find((item) => item.url.includes("kaedear-kdr-m28-delivery-review/"));
+  const url = new globalThis.URL(request.url);
+  expect(Object.fromEntries(url.searchParams)).toEqual({ utm_source: "okumeter", utm_medium: "app", utm_campaign: "delivery_support", utm_content: "garage_nmax" });
+  expect(request.headers.referer).toBeUndefined();
+  expect(await stored(page)).toEqual(before);
+  await article.close();
+  await page.locator('[data-garage-vehicle="bike-2"]').click();
+  await expect(page.locator("#erabibaseArticles a")).toHaveCount(2);
+  await expect(page.locator("#erabibaseArticles")).not.toContainText("NMAX");
+  await expect(page.locator("#erabibaseArticles")).toContainText("レインウェア");
+});
+
 test("車体別に追加・編集・削除し、再読込と復元で整備履歴を保持する", async ({ page }) => {
   await open(page, [entry({ id: "other", vehicleId: "bike-2", description: "チェーン清掃" })]);
   await expect(page.locator("#maintenanceCount")).toHaveText("0件");

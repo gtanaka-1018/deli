@@ -89,7 +89,7 @@ XとInstagramからの流入を分けて確認するときは、次の共有URL�
 - Instagram: `https://okumeter.com/?utm_source=instagram&utm_medium=social`
 - アプリ内共有: `https://okumeter.com/?utm_source=share&utm_medium=referral`
 
-`public/referral.js` は `utm_source` を優先し、パラメーターがない場合は `t.co`、`x.com`、`twitter.com`、`instagram.com` の参照元から流入元を補完する。該当する初回ページビューだけを、Vercel Web Analytics上で `/referral/x`、`/referral/instagram`、`/referral/share` のいずれかとして匿名集計する。Vercelのプロジェクト画面で Analytics → Pages を開くと流入元を分けて確認できる。参照元を送らないアプリ内ブラウザーもあるため、SNSへ掲載するリンクには上記の `utm_source` を付ける。
+`public/referral.js` は `utm_source` を優先し、パラメーターがない場合は `t.co`、`x.com`、`twitter.com`、`instagram.com`、`erabibase.com` の参照元から流入元を補完する。該当する初回ページビューを、Vercel Web Analytics上で `/referral/x`、`/referral/instagram`、`/referral/share`、`/referral/erabibase` のいずれかとして匿名集計する。Vercelのプロジェクト画面で Analytics → Pages を開くと流入元を分けて確認できる。参照元を送らないアプリ内ブラウザーもあるため、掲載するリンクには `utm_source` を付ける。エラビベースの記事案内・リンク・データの扱いは [記事連携の運用](erabibase.md) を参照する。
 
 公開ページ下部の合計値には、`/` に加えてこの3つの分析用パスも含める。分析用URLからクエリ文字列は除去し、売上・経費などの入力内容は送信しない。
 

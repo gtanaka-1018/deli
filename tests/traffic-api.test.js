@@ -26,6 +26,6 @@ test("公開集計は本番環境のトップページと流入分析用パス�
   assert.equal(url.searchParams.get("filter"), ANALYTICS_FILTER);
   assert.equal(
     ANALYTICS_FILTER,
-    "environment eq 'production' and (requestPath eq '/' or requestPath eq '/referral/x' or requestPath eq '/referral/instagram' or requestPath eq '/referral/share')"
+    "environment eq 'production' and (requestPath eq '/' or requestPath eq '/referral/x' or requestPath eq '/referral/instagram' or requestPath eq '/referral/share' or requestPath eq '/referral/erabibase')"
   );
 });

@@ -1,6 +1,6 @@
 // 末尾のハッシュは APP_SHELL の中身から決まる。配信内容を変えたら必ず更新する。
 // 値は tests/service-worker.test.js が検証し、ずれていれば正しい値を教える。
-const CACHE_NAME = "okumeter-v35-c0ff1e29";
+const CACHE_NAME = "okumeter-v36-dd164a2d";
 const APP_SHELL = [
   "/",
   "/index.html",

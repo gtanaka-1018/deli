@@ -14,6 +14,24 @@
   const dateLabel = (value) => value.replaceAll("-", "/");
   const types = { motorcycle: "バイク", bicycle: "自転車", kei: "軽自動車", other: "その他" };
 
+  function renderArticles(vehicle) {
+    const articles = [
+      { path: "food-delivery-bike-gear", tag: "装備選び", title: "配達で使い続けた装備12選", description: "最初にそろえる道具と、買う前の確認点。", source: "garage_gear" },
+      { path: "rainwear-water-repellent-restore-nikwax", tag: "雨具の手入れ", title: "レインウェアの撥水を取り戻す", description: "洗濯表示を確かめて、雨具を長く使うヒントに。", source: "garage_rainwear" },
+    ];
+    if (vehicle?.type === "motorcycle") {
+      const isNmax = /n[\s-]*max/i.test(String(vehicle.label).normalize("NFKC"));
+      articles.unshift(isNmax
+        ? { path: "kaedear-kdr-m28-delivery-review", tag: "NMAX125の装備", title: "スマホホルダーの適合を確認", description: "KDR-M28の寸法や取り付け条件をチェック。", source: "garage_nmax" }
+        : { path: "nmax125-vs-pcx125", tag: "バイク選び", title: "NMAX125とPCX125を比較", description: "収納・ABS・配達用途から、車体選びを考える。", source: "garage_bike" });
+    }
+    document.getElementById("erabibaseArticles").innerHTML = articles.map((article) => {
+      const url = new URL(`https://erabibase.com/${article.path}/`);
+      url.search = new URLSearchParams({ utm_source: "okumeter", utm_medium: "app", utm_campaign: "delivery_support", utm_content: article.source }).toString();
+      return `<a class="erabibase-article" href="${escape(url.href)}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="${article.title}（新しいタブ）"><span class="erabibase-tag">${article.tag}</span><strong>${article.title}<span aria-hidden="true"> ↗</span></strong><span class="erabibase-description">${article.description}</span><span class="erabibase-read">記事を読む</span></a>`;
+    }).join("");
+  }
+
   function vehicles() {
     const state = app.getState();
     const choices = [...state.vehicles];
@@ -69,6 +87,7 @@
     const choices = vehicles();
     if (!choices.some((vehicle) => vehicle.id === selectedVehicle)) selectedVehicle = choices.find((vehicle) => vehicle.id === state.lastVehicleId)?.id || choices[0]?.id || "";
     const vehicle = choices.find((item) => item.id === selectedVehicle);
+    renderArticles(vehicle);
     el.garageCount.textContent = `${choices.length}台`;
     el.garageVehicles.innerHTML = choices.length ? choices.map((item) => {
       const entries = data.forVehicle(state.maintenance, item.id);
