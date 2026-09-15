@@ -37,7 +37,7 @@ function currentYear() {
   return new Date().getFullYear();
 }
 
-test("達成率は数値だけを表示し、時間帯別の推定効率を集計する", async ({ page }) => {
+test("達成率は数値だけを表示し、時間帯別の稼働配分を集計する", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const month = currentMonthKey();
   await seedState(page, {
@@ -62,12 +62,16 @@ test("達成率は数値だけを表示し、時間帯別の推定効率を集�
   await expect(page.locator("#metricAchievement")).toHaveText("150%");
   await expect(page.locator(".rank-badge")).toHaveCount(0);
   await expect(page.locator("#monthReport .time-analysis-panel")).toBeVisible();
+  await expect(page.locator("#monthReport .time-analysis-panel h3")).toHaveText("時間帯別の稼働配分（推定）");
   await expect(page.locator("#monthReport .time-analysis-heading")).toContainText("分析対象 3/4日・対象売上 90%・時刻なし 1日は対象外");
   await expect(page.locator('#monthReport [data-time-band="morning"] .time-analysis-hourly')).toHaveText(/[¥￥]2,000\/h/);
   await expect(page.locator('#monthReport [data-time-band="dinner"] .time-analysis-hourly')).toHaveText(/[¥￥]4,000\/h/);
   await expect(page.locator('#monthReport [data-time-band="late"] .time-analysis-hourly')).toHaveText(/[¥￥]3,000\/h/);
   await expect(page.locator("#monthReport .time-analysis-insight")).toHaveCount(0);
   await expect(page.locator("#monthReport .time-analysis-sample-note")).toHaveCount(3);
+  await expect(page.locator("#monthReport .time-analysis-note")).toContainText("実際にどの時間帯で稼げたかは、この記録だけでは判断できません");
+  const widths = await page.locator("#monthReport .time-analysis-bar > span").evaluateAll((bars) => bars.map((bar) => bar.style.width));
+  expect(widths).toEqual(["100%", "100%", "100%"]);
 
   const width = await page.evaluate(() => ({
     viewport: window.innerWidth,

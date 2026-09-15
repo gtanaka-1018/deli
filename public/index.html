@@ -402,6 +402,7 @@
             <article class="metric-tile accent-amber">
               <span>時給</span>
               <strong id="metricHourly">¥0</strong>
+              <small class="metric-target-sales" id="metricHourlyCoverage"></small>
             </article>
             <article class="metric-tile accent-red">
               <span>達成率</span>
@@ -409,6 +410,8 @@
               <small class="metric-target-sales" id="metricTargetSales">目標売上：¥0</small>
             </article>
           </section>
+
+          <section class="panel sales-insights-panel" id="salesInsights" aria-label="売上分析"></section>
 
           <section class="panel report-panel">
             <div class="panel-heading">
@@ -1326,6 +1329,8 @@
     <script defer src="/payout-import.js"></script>
     <script defer src="/maintenance-data.js"></script>
     <script defer src="/maintenance.js"></script>
+    <script defer src="/sales-analysis.js"></script>
+    <script defer src="/sales-insights.js"></script>
     <script defer src="/app.js"></script>
     <script defer src="/traffic.js"></script>
     <script defer src="/supabase-client.js"></script>

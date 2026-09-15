@@ -2689,3 +2689,75 @@ button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); 
   .maintenance-dialog { width: 100%; max-height: 92dvh; margin-bottom: 0; border-radius: 22px 22px 0 0; }
   .maintenance-dialog .dialog-card { padding: 22px 18px; }
 }
+
+/* Sales analysis uses theme tokens in both color schemes. */
+.sales-insights-panel { min-width: 0; margin: 22px 0; padding: 24px; }
+.analysis-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.analysis-heading h3 { margin: 0; color: var(--ink-strong); font-size: 23px; line-height: 1.4; }
+.analysis-eyebrow { margin: 0 0 5px; color: var(--muted); font-size: 11px; }
+.analysis-period-badge { padding: 6px 10px; border: 1px solid var(--accent-border); border-radius: 8px; background: var(--accent-soft); color: var(--accent-text); font-size: 11px; font-weight: 600; }
+.analysis-periods { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-top: 16px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.analysis-periods p { margin: 0; overflow-wrap: anywhere; }
+.analysis-periods p > span { margin-right: 9px; font-weight: 650; }
+.analysis-periods small { flex-basis: 100%; font-size: 11px; }
+.analysis-summary-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 24px; margin-top: 20px; padding: 22px 0; border-block: 1px solid var(--line); }
+.analysis-sales > span, .analysis-change > span { display: block; margin-bottom: 8px; color: var(--muted); font-size: 12px; }
+.analysis-sales > strong { display: block; color: var(--ink-strong); font-size: clamp(26px, 3vw, 34px); line-height: 1.3; letter-spacing: -.03em; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.analysis-change > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 10px; }
+.analysis-delta { font-size: clamp(23px, 2.6vw, 30px); line-height: 1.4; letter-spacing: -.03em; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.analysis-change-rate { font-size: 14px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.analysis-no-comparison { padding-top: 3px; color: var(--muted); font-size: 14px; font-weight: 500; line-height: 1.7; }
+.analysis-positive { color: var(--green); }
+.analysis-negative { color: var(--red); }
+.analysis-effects { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+.analysis-effects > div { min-width: 0; padding: 15px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-soft); }
+.analysis-effects span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 12px; }
+.analysis-effects strong { display: block; font-size: 22px; line-height: 1.4; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.analysis-note { margin: 12px 0 0; color: var(--muted); font-size: 11px; line-height: 1.9; overflow-wrap: anywhere; }
+.analysis-guidance { padding: 12px 14px; border-radius: 10px; background: var(--surface-soft); font-size: 12px; }
+.analysis-details { margin-top: 12px; }
+.analysis-details > summary { width: fit-content; padding: 9px 0; color: var(--accent-text); font-size: 12px; font-weight: 600; cursor: pointer; }
+.analysis-details[open] > summary { margin-bottom: 7px; }
+.analysis-details > summary:focus-visible, .analysis-table-scroll:focus-visible, .analysis-tabs button:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 3px; }
+.analysis-coverage { margin: 18px 0 20px; padding: 12px 14px; border-left: 3px solid var(--line-strong); color: var(--muted); background: var(--surface-soft); font-size: 11px; line-height: 1.9; overflow-wrap: anywhere; }
+.analysis-tabs { display: flex; gap: 5px; padding: 4px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-soft); }
+.analysis-tabs button { flex: 1 1 0; min-width: 0; min-height: 42px; padding: 9px 10px; border: 1px solid var(--surface-soft); border-radius: 8px; background: var(--surface-soft); color: var(--muted); font-size: 13px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.analysis-tabs button:hover { color: var(--accent-text); }
+.analysis-tabs button[aria-selected="true"] { border-color: var(--accent-border); background: var(--surface); color: var(--accent-text); box-shadow: var(--shadow); }
+.analysis-tab-panel { min-width: 0; padding-top: 2px; }
+.analysis-tab-panel[hidden] { display: none; }
+.analysis-finding { margin: 18px 0 16px; color: var(--ink); font-size: 13px; font-weight: 550; line-height: 1.9; overflow-wrap: anywhere; }
+.analysis-scroll-hint { display: none; }
+.analysis-table-scroll { width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; border: 1px solid var(--line); border-radius: 11px; }
+.analysis-table { width: 100%; min-width: 660px; border-collapse: collapse; color: var(--ink); font-size: 12px; line-height: 1.6; }
+.analysis-table th, .analysis-table td { padding: 13px 12px; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; }
+.analysis-table thead th { background: var(--surface-soft); color: var(--muted); font-size: 11px; font-weight: 600; white-space: nowrap; }
+.analysis-table th:first-child { min-width: 62px; text-align: left; }
+.analysis-table tbody th { max-width: 180px; font-weight: 600; overflow-wrap: anywhere; }
+.analysis-table td { white-space: nowrap; }
+.analysis-table small { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; }
+.analysis-table tr:last-child th, .analysis-table tr:last-child td { border-bottom: 0; }
+.analysis-table .analysis-empty-cell { padding: 25px 16px; color: var(--muted); text-align: left; }
+.analysis-comparison-table { min-width: 0; table-layout: fixed; }
+.analysis-comparison-table th:first-child { width: 40%; }
+.analysis-comparison-table td { white-space: normal; overflow-wrap: anywhere; }
+.analysis-weather-table { min-width: 530px; }
+.analysis-visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+@media (max-width: 620px) {
+  .sales-insights-panel { margin-block: 18px; padding: 18px 14px; }
+  .analysis-heading h3 { font-size: 21px; }
+  .analysis-summary-grid { grid-template-columns: 1fr; gap: 17px; margin-top: 16px; padding-block: 18px; }
+  .analysis-sales > strong { font-size: 32px; }
+  .analysis-delta { font-size: 27px; }
+  .analysis-effects { gap: 8px; margin-top: 15px; }
+  .analysis-effects > div { padding: 12px 10px; }
+  .analysis-effects span { font-size: 11px; }
+  .analysis-effects strong { font-size: 19px; }
+  .analysis-tabs { gap: 2px; }
+  .analysis-tabs button { padding-inline: 4px; font-size: 11px; }
+  .analysis-finding { font-size: 12px; }
+  .analysis-scroll-hint { display: block; margin: -6px 0 9px; color: var(--muted); font-size: 10px; line-height: 1.6; text-align: right; }
+  .analysis-comparison-table th, .analysis-comparison-table td { padding: 12px 8px; }
+  .analysis-coverage { padding: 10px; }
+}

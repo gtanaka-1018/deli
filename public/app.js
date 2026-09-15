@@ -261,6 +261,8 @@ function bindElements() {
     "metricSales",
     "metricProfit",
     "metricHourly",
+    "metricHourlyCoverage",
+    "salesInsights",
     "metricAchievement",
     "metricTargetSales",
     "okuMeterGauge",
@@ -2909,7 +2911,8 @@ function renderCurrentMetrics() {
 
   els.metricSales.textContent = yen(summary.sales);
   els.metricProfit.textContent = yen(summary.profit);
-  els.metricHourly.textContent = yen(summary.hourly);
+  els.metricHourly.textContent = summary.workHours > 0 ? yen(summary.hourly) : "—";
+  els.metricHourlyCoverage.textContent = `時間記録 ${summary.timedDays}/${summary.activityDays}日`;
   renderAchievement(els.metricAchievement, achievement, target > 0);
   els.metricTargetSales.textContent = `目標売上：${yen(target)}`;
 }
@@ -3040,7 +3043,21 @@ function renderReports() {
   renderWeekReport();
   renderMonthReport();
   renderYearReport();
+  renderSalesInsights();
   els.periodLabel.textContent = periodLabel();
+}
+
+function renderSalesInsights() {
+  const range = window.DeliSalesAnalysis.periods(state.view, state.selectedDate, todayString());
+  const rows = allRecordedRecords().map((record) => ({
+    date: record.date,
+    services: record.services,
+    hours: calculateWorkHours(record, record.workHours),
+    expense: record.gasCost + record.otherExpense,
+    weather: record.weather,
+  }));
+  const analysis = window.DeliSalesAnalysis.analyze(rows, range);
+  window.DeliSalesInsights.render(els.salesInsights, analysis, { range, providers: state.providers });
 }
 
 function renderDayReport() {
@@ -3285,7 +3302,7 @@ function summaryGrid(summary, target) {
       ${summaryTile("総売上", yen(summary.sales))}
       ${summaryTile("件数", `${summary.count}件`)}
       ${summaryTile("稼働時間", formatHours(summary.workHours))}
-      ${summaryTile("時給", yen(summary.hourly))}
+      ${summaryTile("時給（時間記録日）", summary.workHours > 0 ? yen(summary.hourly) : "—")}
       ${summaryTile("走行距離", `${formatNumber(summary.distanceKm)}km`)}
       ${summaryTile("km単価（売上）", summary.kmUnit > 0 ? `${yen(summary.kmUnit)}/km` : "-")}
       ${summaryTile("経費", yen(summary.expense))}
@@ -3394,8 +3411,8 @@ function timeBandAnalysisMarkup(records) {
       <section class="time-analysis-panel time-analysis-empty" aria-label="時間帯別の稼働分析">
         <div class="time-analysis-heading">
           <div>
-            <h3>時間帯別の稼働傾向（推定）</h3>
-            <p>開始・終了時刻がある記録から、朝・ランチ・ディナーなどの傾向を表示します。</p>
+            <h3>時間帯別の稼働配分（推定）</h3>
+            <p>開始・終了時刻がある記録から、各時間帯にどれだけ稼働したかを表示します。</p>
           </div>
         </div>
         <p class="empty-state">この期間には分析できる時間帯データがありません。</p>
@@ -3403,12 +3420,7 @@ function timeBandAnalysisMarkup(records) {
     `;
   }
 
-  const maxHourly = Math.max(...analysis.bands.map((band) => band.hourly), 1);
-  const bestBand = analysis.analyzedDays >= 5
-    ? analysis.bands
-      .filter((band) => band.hours >= 10 && band.days >= 5)
-      .sort((left, right) => right.hourly - left.hourly)[0]
-    : null;
+  const maxHours = Math.max(...analysis.bands.map((band) => band.hours), 1);
   const salesCoverage = analysis.activitySales > 0
     ? analysis.analyzedSales / analysis.activitySales
     : analysis.activityDays > 0 ? analysis.analyzedDays / analysis.activityDays : 0;
@@ -3422,14 +3434,13 @@ function timeBandAnalysisMarkup(records) {
     <section class="time-analysis-panel" aria-label="時間帯別の稼働分析">
       <div class="time-analysis-heading">
         <div>
-          <h3>時間帯別の稼働傾向（推定）</h3>
+          <h3>時間帯別の稼働配分（推定）</h3>
           <p>${escapeHtml(coverage)}</p>
         </div>
-        ${bestBand ? `<p class="time-analysis-insight"><strong>${escapeHtml(bestBand.label)}</strong>の推定時給が高め：${yen(bestBand.hourly)}/h</p>` : ""}
       </div>
       <div class="time-analysis-list">
         ${analysis.bands.map((band) => {
-          const width = Math.max((band.hourly / maxHourly) * 100, 3);
+          const width = Math.max((band.hours / maxHours) * 100, 3);
           return `
             <article class="time-analysis-row" data-time-band="${escapeHtml(band.id)}">
               <div class="time-band-label">
@@ -3442,13 +3453,13 @@ function timeBandAnalysisMarkup(records) {
                 <div><dt>稼働</dt><dd>${formatHours(band.hours)}・${band.days}日</dd></div>
                 <div><dt>推定売上</dt><dd>${yen(band.estimatedSales)}</dd></div>
                 <div><dt>推定件数</dt><dd>${formatNumber(band.estimatedCount)}件</dd></div>
-                <div><dt>推定時給</dt><dd class="time-analysis-hourly">${yen(band.hourly)}/h</dd></div>
+                <div><dt>按分時給</dt><dd class="time-analysis-hourly">${yen(band.hourly)}/h</dd></div>
               </dl>
             </article>
           `;
         }).join("")}
       </div>
-      <p class="time-analysis-note">1日の売上・件数を、その日の記録済み稼働分数に応じて各時間帯へ配分した推定です。時間帯ごとの実売上ではありません。</p>
+      <p class="time-analysis-note">棒の長さは稼働時間です。売上・件数は1日の合計を記録済み稼働分数で按分した推定で、按分時給もその値から計算しています。実際にどの時間帯で稼げたかは、この記録だけでは判断できません。</p>
     </section>
   `;
 }
@@ -3530,6 +3541,9 @@ function summarizeRecords(records) {
     sales: 0,
     count: 0,
     workHours: 0,
+    hourlySales: 0,
+    timedDays: 0,
+    activityDays: 0,
     distanceKm: 0,
     gasCost: 0,
     gasCostForUnit: 0,
@@ -3546,15 +3560,25 @@ function summarizeRecords(records) {
 
   records.map(normalizeRecord).forEach((record) => {
     let recordSales = 0;
+    let recordCount = 0;
     Object.entries(record.services).forEach(([id, item]) => {
-      if (!summary.services[id]) summary.services[id] = { count: 0, sales: 0 };
+      if (!Object.hasOwn(summary.services, id)) {
+        Object.defineProperty(summary.services, id, { value: { count: 0, sales: 0 }, enumerable: true, writable: true, configurable: true });
+      }
       summary.services[id].count += item.count;
       summary.services[id].sales += item.sales;
       summary.count += item.count;
       summary.sales += item.sales;
       recordSales += item.sales;
+      recordCount += item.count;
     });
-    summary.workHours += calculateWorkHours(record, record.workHours);
+    const recordHours = calculateWorkHours(record, record.workHours);
+    summary.workHours += recordHours;
+    if (recordSales > 0 || recordCount > 0 || recordHours > 0) summary.activityDays += 1;
+    if (recordHours > 0) {
+      summary.timedDays += 1;
+      summary.hourlySales += recordSales;
+    }
     const recordDistanceKm = record.odometerKm > 0
       ? calculateDailyDistance(record.date, record.odometerKm, record.vehicleId)
       : record.distanceKm;
@@ -3570,7 +3594,7 @@ function summarizeRecords(records) {
 
   summary.expense = summary.gasCost + summary.otherExpense;
   summary.profit = summary.sales - summary.expense;
-  summary.hourly = summary.workHours > 0 ? summary.sales / summary.workHours : 0;
+  summary.hourly = summary.workHours > 0 ? summary.hourlySales / summary.workHours : 0;
   summary.gasUnit = summary.fuelLiters > 0 ? summary.gasCostForUnit / summary.fuelLiters : 0;
   summary.kmUnit = summary.distanceKm > 0 ? summary.kmUnitSales / summary.distanceKm : 0;
   return summary;
@@ -3749,7 +3773,7 @@ function normalizeRecord(record) {
     ...state.providers.map((provider) => provider.id),
     ...Object.keys(isPlainObject(record.services) ? record.services : {}),
   ]);
-  normalized.services = {};
+  normalized.services = Object.create(null);
   serviceIds.forEach((id) => {
     normalized.services[id] = {
       count: integerValue(record.services?.[id]?.count),

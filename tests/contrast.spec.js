@@ -161,6 +161,14 @@ for (const scheme of ["light", "dark"]) {
       await page.waitForTimeout(300);
       const failures = await page.evaluate(MEASURE);
       failures.forEach((failure) => found.push({ screen, ...failure }));
+      if (screen === "summary") {
+        await page.locator("#salesInsights .analysis-details > summary").click();
+        for (const tab of ["weekdays", "platforms", "weather"]) {
+          await page.locator(`#salesInsights button[data-analysis-tab="${tab}"]`).click();
+          const analysisFailures = await page.evaluate(MEASURE);
+          analysisFailures.forEach((failure) => found.push({ screen: `summary:${tab}`, ...failure }));
+        }
+      }
       if (screen === "maintenance") {
         await page.locator("#addMaintenance").click();
         await expect(page.locator("#maintenanceDialog")).toBeVisible();
