@@ -307,6 +307,8 @@ function bindElements() {
     "toast",
     "exportJson",
     "importJson",
+    "importPayoutJson",
+    "payoutImportStatus",
     "clearAll",
     "backupCareCard",
     "backupCareTitle",
@@ -681,6 +683,7 @@ function bindEvents() {
 
   els.exportJson.addEventListener("click", exportBackup);
   els.importJson.addEventListener("change", importBackup);
+  els.importPayoutJson.addEventListener("change", importPayoutFile);
   els.clearAll.addEventListener("click", clearAllData);
   els.restorePointList.addEventListener("click", restoreFromPoint);
   els.wipeDevice.addEventListener("click", wipeDeviceData);
@@ -2144,6 +2147,7 @@ async function renderRestorePoints() {
 }
 
 function restorePointLabel(reason) {
+  if (reason?.startsWith("before-payout-import-")) return "振込の取り込み直前";
   return {
     "before-import": "ファイル読み込みの直前",
     "before-clear": "削除の直前",
@@ -3919,6 +3923,72 @@ function exportBackup() {
   }
   if (currentScreen === "settings") renderBackupCare();
   showToast("データをファイル保存しました");
+}
+
+async function importPayoutFile(event) {
+  const input = event.target;
+  const file = input.files?.[0];
+  if (!file || input.disabled) return;
+  input.disabled = true;
+  els.payoutImportStatus.textContent = "振込ファイルを確認しています…";
+  try {
+    const batch = window.DeliPayoutImport.parseImport(JSON.parse(await file.text()));
+    if (saveBlockedReason) throw new Error(saveBlockedReason);
+    if (formDirty) throw new Error("未保存の入力を保存してから、振込ファイルをもう一度選んでください。");
+    const result = window.DeliPayoutImport.mergeImport(state.records, batch);
+    if (!result.changedDays) {
+      els.payoutImportStatus.textContent = `${result.count}件・${yen(result.total)}の振込はすべて登録済みです。`;
+      return;
+    }
+    const providerTotals = result.providers.map((provider) => {
+      const label = state.providers.find((item) => item.id === provider.providerId)?.label
+        || DEFAULT_PROVIDERS.find((item) => item.id === provider.providerId)?.label;
+      return `${label}：${yen(provider.amount)}`;
+    }).join("\n");
+    if (!confirm(`振込${result.count}件・${yen(result.total)}を取り込みますか？\n${providerTotals}\n\n新規 ${result.addedDays}日／未分類を分類 ${result.classifiedDays}日／登録済み ${result.unchangedDays}日\n売上・経費・資産はそのまま残ります。`)) {
+      els.payoutImportStatus.textContent = "振込の取り込みをキャンセルしました。";
+      return;
+    }
+    const checkpoint = JSON.stringify({ ...snapshotState(), updatedAt: "" });
+    const revision = formRevision;
+    // 同じ分の再取り込みでも、直前の状態を必ず別の復元ポイントに残す。
+    const point = await window.DeliVault?.saveRestorePoint(
+      structuredClone(snapshotState()), `before-payout-import-${crypto.randomUUID()}`
+    );
+    if (!point) throw new Error("取り込み前の復元ポイントを保存できませんでした。振込はまだ変更していません。");
+    if (saveBlockedReason) throw new Error(saveBlockedReason);
+    if (revision !== formRevision || checkpoint !== JSON.stringify({ ...snapshotState(), updatedAt: "" })) {
+      throw new Error("確認中に記録が更新されました。振込ファイルをもう一度選んでください。");
+    }
+    const previousRecords = state.records;
+    const previousProviders = state.providers;
+    const missingProviders = DEFAULT_PROVIDERS.filter((provider) =>
+      result.providers.some((item) => item.providerId === provider.id)
+      && !state.providers.some((item) => item.id === provider.id)
+    );
+    clearTimeout(persistTimer);
+    persistTimer = 0;
+    state.records = result.records;
+    state.providers = [...state.providers, ...missingProviders.map((provider) => ({ ...provider }))];
+    try { await persist(); }
+    catch {
+      state.records = previousRecords;
+      state.providers = previousProviders;
+      throw new Error("振込を保存できませんでした。取り込み前の記録を保っています。");
+    }
+    invalidateOdometerIndex();
+    fillFormForDate(state.selectedDate);
+    render({ shouldPersist: false });
+    els.payoutImportStatus.textContent = `振込${result.count}件・${yen(result.total)}の取り込みが完了しました（新規 ${result.addedDays}日、分類 ${result.classifiedDays}日、登録済み ${result.unchangedDays}日）。`;
+    showToast("振込の取り込みが完了しました");
+  } catch (error) {
+    els.payoutImportStatus.textContent = error instanceof SyntaxError
+      ? "振込用のJSONファイルを選んでください。"
+      : error.message || "振込ファイルを読み込めませんでした。";
+  } finally {
+    input.value = "";
+    input.disabled = false;
+  }
 }
 
 function importBackup(event) {

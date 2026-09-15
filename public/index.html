@@ -1057,8 +1057,13 @@
                 ファイルから読み込む
                 <input id="importJson" type="file" accept="application/json" />
               </label>
+              <label class="text-button muted file-text-button">
+                振込だけを読み込む
+                <input id="importPayoutJson" type="file" accept="application/json" aria-describedby="payoutImportStatus" />
+              </label>
               <button class="text-button danger" id="clearAll" type="button">売上記録と目標を削除</button>
             </div>
+            <p class="field-note" id="payoutImportStatus" role="status">振込用ファイルの金額とプラットフォームを取り込みます。登録済みの振込と内容が異なる場合は、対象日をお知らせします。</p>
             <p class="storage-usage-note" id="storageUsageNote" hidden></p>
             <button class="text-button danger wipe-device-button" id="wipeDevice" type="button">この端末からデータを完全に削除</button>
             <p class="field-note">記録・控え・復元ポイントをこの端末からすべて消します。端末を手放すときや共有端末で使い終わったときに使ってください。</p>
@@ -1318,6 +1323,7 @@
     <script defer src="/tax-calculator.js"></script>
     <script defer src="/backup-vault.js"></script>
     <script defer src="/payout-data.js"></script>
+    <script defer src="/payout-import.js"></script>
     <script defer src="/maintenance-data.js"></script>
     <script defer src="/maintenance.js"></script>
     <script defer src="/app.js"></script>
