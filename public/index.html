@@ -265,16 +265,6 @@
               <div class="service-picker" id="servicePicker" aria-label="プラットフォームを選択"></div>
             </div>
 
-            <div class="input-section payout-field">
-              <div class="field-section-heading">
-                <strong>振込</strong>
-                <button class="text-button" id="addPayout" type="button" aria-haspopup="dialog" aria-controls="payoutDialog">＋ 振込を追加</button>
-              </div>
-              <p class="payout-note">選択した日を振込日として記録します。売上とは別に集計します。</p>
-              <div class="expense-total-row"><span>この日の振込合計</span><strong id="payoutTotal">¥0</strong></div>
-              <div class="expense-list" id="payoutList"></div>
-            </div>
-
             <div class="input-section work-session-field">
               <div class="field-section-heading">
                 <div>
@@ -370,6 +360,16 @@
                   元データに記録された稼働時間を使用中です。時間帯を編集すると自動計算へ切り替わります。
                 </p>
               </details>
+            </div>
+
+            <div class="input-section payout-field">
+              <div class="field-section-heading">
+                <strong>振込</strong>
+                <button class="text-button" id="addPayout" type="button" aria-haspopup="dialog" aria-controls="payoutDialog">＋ 振込を追加</button>
+              </div>
+              <p class="payout-note">選択した日を振込日として記録します。売上とは別に集計します。</p>
+              <div class="expense-total-row"><span>この日の振込合計</span><strong id="payoutTotal">¥0</strong></div>
+              <div class="expense-list" id="payoutList"></div>
             </div>
 
           </section>
