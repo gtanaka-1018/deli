@@ -1248,7 +1248,14 @@
             <label for="maintenanceDate">整備日<input id="maintenanceDate" type="date" required /></label>
             <label for="maintenanceOdometer">積算走行距離（km・任意）<input id="maintenanceOdometer" type="number" min="0" step="0.1" inputmode="decimal" placeholder="例：35000" /></label>
             <label for="maintenanceDescription">整備内容<input id="maintenanceDescription" type="text" maxlength="200" placeholder="例：オイル・タイヤ交換" required /></label>
-            <div class="maintenance-presets" aria-label="整備内容の候補"><button type="button" data-maintenance-preset="オイル交換">オイル交換</button><button type="button" data-maintenance-preset="タイヤ交換">タイヤ交換</button><button type="button" data-maintenance-preset="ブレーキ整備">ブレーキ整備</button><button type="button" data-maintenance-preset="定期点検">定期点検</button></div>
+            <div class="maintenance-presets" aria-label="整備内容の候補">
+              <button type="button" data-maintenance-preset="オイル交換">オイル交換</button>
+              <button type="button" data-maintenance-preset="タイヤ交換（フロント）">タイヤ交換（フロント）</button>
+              <button type="button" data-maintenance-preset="タイヤ交換（リア）">タイヤ交換（リア）</button>
+              <button type="button" data-maintenance-preset="ブレーキパッド交換（フロント）">ブレーキパッド交換（フロント）</button>
+              <button type="button" data-maintenance-preset="ブレーキパッド交換（リア）">ブレーキパッド交換（リア）</button>
+              <button type="button" data-maintenance-preset="駆動系交換">駆動系交換</button>
+            </div>
             <label for="maintenanceMemo">メモ（任意）<textarea id="maintenanceMemo" rows="3" maxlength="1000" placeholder="交換した部品や、次回確認したいこと"></textarea></label>
           </div>
           <p class="maintenance-form-note">整備費用は、配達記録の「経費」に入力できます。</p>
