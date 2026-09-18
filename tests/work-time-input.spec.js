@@ -38,3 +38,41 @@ test("稼働時刻を3〜4桁で入力し、未保存時だけ保存ボタンを
   await page.locator("#saveRecord").click();
   await expect(dock).toBeHidden();
 });
+
+for (const width of [390, 1280]) {
+  test(`開始時刻の4桁入力で同じ時間帯の終了へ移る（幅${width}）`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto(process.env.DELILOG_TEST_URL || "https://okumeter.com", { waitUntil: "networkidle" });
+    const start = page.locator('[data-session-field="startTime"]').first();
+    const end = page.locator('[data-session-field="endTime"]').first();
+
+    await start.focus();
+    await page.keyboard.type("064");
+    await expect(start).toBeFocused();
+    await page.keyboard.type("5");
+    await expect(end).toBeFocused();
+    await page.keyboard.type("0745");
+    await expect(end).toHaveValue("0745");
+    await expect(end).toBeFocused();
+
+    await page.locator("#addWorkSession").click();
+    const secondStart = page.locator('[data-session-field="startTime"]').nth(1);
+    const secondEnd = page.locator('[data-session-field="endTime"]').nth(1);
+    await secondStart.fill("2560");
+    await expect(secondStart).toBeFocused();
+    await secondStart.fill("0900");
+    await expect(secondEnd).toBeFocused();
+    await page.keyboard.type("1000");
+    await expect(end).toHaveValue("0745");
+    await expect(secondEnd).toHaveValue("1000");
+    await expect(page.locator("#dailyWorkHours")).toHaveText("2.00h");
+
+    await page.locator("#saveRecord").click();
+    await expect(page.locator("#recordActionDock")).toBeHidden();
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(start).toHaveValue("0645");
+    await expect(end).toHaveValue("0745");
+    await expect(secondStart).toHaveValue("0900");
+    await expect(secondEnd).toHaveValue("1000");
+  });
+}

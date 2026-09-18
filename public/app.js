@@ -676,6 +676,8 @@ function bindEvents() {
     const button = event.target.closest("[data-remove-session]");
     if (button) removeWorkSession(Number(button.dataset.removeSession));
   });
+  els.workSessions.addEventListener("input", focusWorkSessionEnd);
+  els.workSessions.addEventListener("compositionend", focusWorkSessionEnd);
   els.workSessions.addEventListener("focusout", (event) => {
     const input = event.target.closest("[data-session-field]");
     if (!input || !input.value.trim()) return;
@@ -1774,6 +1776,14 @@ function restoreExpenseDialogFocus() {
 
 function blankWorkSession() {
   return { startTime: "", endTime: "" };
+}
+
+function focusWorkSessionEnd(event) {
+  const input = event.target;
+  if (event.isComposing || document.activeElement !== input
+    || !input.matches('[data-session-field="startTime"]')
+    || !/^[0-9０-９]{4}$/.test(input.value) || !normalizeTime(input.value)) return;
+  input.closest(".work-session-row")?.querySelector('[data-session-field="endTime"]')?.focus();
 }
 
 function renderWorkSessionRows(sessions) {
